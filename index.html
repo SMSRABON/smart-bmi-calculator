@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart BMI & Wellness Calculator</title>
+
+<style>
+:root {
+  --primary:#087ea4;
+  --secondary:#38bdf8;
+  --bg:#eaf7ff;
+  --card:rgba(255,255,255,.92);
+  --text:#17324d;
+  --muted:#64748b;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:Arial,sans-serif;color:var(--text);
+  background:var(--bg);transition:.3s;line-height:1.5;
+}
+body.sunset{--primary:#ea580c;--secondary:#fb923c;--bg:#fff1e9;--text:#4a2518}
+body.forest{--primary:#15803d;--secondary:#4ade80;--bg:#eaf8ed;--text:#183b25}
+body.dark{--primary:#818cf8;--secondary:#a78bfa;--bg:#111827;--card:#1f2937;--text:#f3f4f6;--muted:#cbd5e1}
+body.high-contrast{--primary:#000;--secondary:#333;--bg:#fff;--card:#fff;--text:#000;--muted:#222}
+body.large-text{font-size:19px}
+header{
+  text-align:center;padding:28px 15px;color:white;
+  background:linear-gradient(120deg,var(--primary),var(--secondary));
+}
+header h1{margin:0;font-size:30px}
+header p{margin:8px 0 0}
+.controls{
+  display:flex;justify-content:center;flex-wrap:wrap;gap:10px;
+  padding:15px;
+}
+select,button,input{
+  padding:10px;border:1px solid #cbd5e1;border-radius:9px;
+  font-size:14px;
+}
+button{cursor:pointer;background:var(--primary);color:white;border:0}
+button:hover{opacity:.88}
+button.secondary{background:#64748b}
+button.danger{background:#dc2626}
+.container{max-width:1150px;margin:auto;padding:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.card{
+  background:var(--card);padding:20px;border-radius:16px;
+  box-shadow:0 5px 20px rgba(0,0,0,.08);margin-bottom:18px;
+}
+.card h2,.card h3{margin-top:0;color:var(--primary)}
+label{display:block;font-weight:bold;margin:10px 0 5px}
+input,select{width:100%;background:var(--card);color:var(--text)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.result{text-align:center;padding:20px;border-radius:14px;background:var(--bg)}
+.big-number{font-size:42px;font-weight:bold;color:var(--primary)}
+.badge{display:inline-block;padding:6px 14px;border-radius:20px;background:var(--primary);color:white;font-weight:bold}
+.muted{color:var(--muted)}
+.progress{height:14px;background:#dbeafe;border-radius:20px;overflow:hidden;margin:10px 0}
+.progress div{height:100%;background:var(--primary);width:0%;transition:.3s}
+.scale{
+  height:17px;border-radius:20px;
+  background:linear-gradient(to right,#60a5fa 0 25%,#22c55e 25% 50%,#facc15 50% 75%,#ef4444 75%);
+  position:relative;margin:22px 0 8px;
+}
+.pointer{
+  position:absolute;top:-8px;width:4px;height:33px;background:var(--text);
+  left:0%;transition:.3s;
+}
+ul{padding-left:22px}
+li{margin:5px 0}
+table{width:100%;border-collapse:collapse}
+td,th{padding:9px;border-bottom:1px solid #cbd5e1;text-align:left}
+canvas{width:100%;max-height:260px}
+.hidden{display:none!important}
+.bubble{
+  position:fixed;bottom:-80px;width:35px;height:35px;border-radius:50%;
+  background:rgba(56,189,248,.18);animation:float 14s infinite linear;
+  pointer-events:none;z-index:-1;
+}
+.bubble:nth-child(2){left:20%;animation-duration:18s;width:55px;height:55px}
+.bubble:nth-child(3){left:70%;animation-duration:20s;width:25px;height:25px}
+@keyframes float{to{transform:translateY(-120vh) translateX(60px)}}
+footer{text-align:center;padding:25px;color:var(--muted)}
+.small{font-size:13px}
+
+/* ---------- EXPANDED HEALTHY FOOD DATABASE ---------- */
+.food-toolbar{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin:15px 0}
+.food-categories{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 18px}
+.food-filter{background:#64748b;padding:8px 13px;border-radius:20px}
+.food-filter.active{background:var(--primary);outline:2px solid var(--secondary)}
+.food-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:16px}
+.food-card{background:var(--bg);border:1px solid #dbeafe;border-radius:14px;overflow:hidden;min-width:0}
+.food-card img{width:100%;height:145px;object-fit:cover;display:block;background:#e2e8f0}
+.food-card img.food-illustration{object-fit:contain;padding:8px;background:linear-gradient(135deg,#f0fdf4,#eff6ff)}
+body[lang="bn"]{font-family:"Noto Sans Bengali",Arial,sans-serif}
+body[lang="hi"]{font-family:"Noto Sans Devanagari",Arial,sans-serif}
+.food-card-content{padding:13px}
+.food-card h3{margin:0 0 4px;color:var(--primary)}
+.food-category{display:inline-block;font-size:11px;background:var(--primary);color:white;padding:3px 9px;border-radius:15px;margin:4px 0 8px}
+.food-nutrients{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.food-nutrients span{background:var(--card);padding:6px;border-radius:7px;font-size:12px}
+.food-calories{font-size:19px;font-weight:bold;color:var(--primary)}
+.food-count{font-size:13px;color:var(--muted);margin:8px 0}
+.food-note{font-size:12px;color:var(--muted);margin-top:15px}
+@media(max-width:600px){.food-toolbar{grid-template-columns:1fr}.food-grid{grid-template-columns:repeat(auto-fit,minmax(155px,1fr))}.food-card img{height:120px}}
+
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+@media(max-width:600px){
+  header h1{font-size:24px}
+  .row{grid-template-columns:1fr}
+  .container{padding:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+@media print{
+  .controls,button,header,.no-print{display:none!important}
+  body{background:white;color:black}
+  .card{box-shadow:none;border:1px solid #ddd;break-inside:avoid}
+}
+</style>
+</head>
+
+<body>
+<div class="bubble" style="left:8%"></div>
+<div class="bubble"></div>
+<div class="bubble"></div>
+
+<header>
+  <h1>💙 Smart BMI & Wellness Calculator</h1>
+  <p>Your Personal Health and Lifestyle Assistant</p>
+</header>
+
+<div class="controls no-print">
+  <select id="theme">
+    <option value="ocean" data-i18n="Ocean Theme">🌊 Ocean Theme</option>
+    <option value="sunset" data-i18n="Sunset Theme">🌅 Sunset Theme</option>
+    <option value="forest" data-i18n="Forest Theme">🌳 Forest Theme</option>
+    <option value="dark" data-i18n="Dark Theme">🌙 Dark Theme</option>
+  </select>
+  <select id="language">
+    <option value="en">English</option>
+    <option value="bn">বাংলা</option>
+    <option value="hi">हिन्दी</option>
+  </select>
+  <button class="secondary" onclick="toggleLargeText()">A+ Text Size</button>
+  <button class="secondary" onclick="toggleContrast()">High Contrast</button>
+</div>
+
+<main class="container">
+
+<!-- USER PROFILE -->
+<section class="card">
+  <h2>👤 User Profile</h2>
+  <div class="row">
+    <div>
+      <label for="userName">Your Name</label>
+      <input id="userName" placeholder="Enter your name">
+    </div>
+    <div>
+      <label for="age">Age (18+)</label>
+      <input id="age" type="number" min="18" max="100" placeholder="e.g. 25">
+    </div>
+    <div>
+      <label for="gender">Gender</label>
+      <select id="gender">
+        <option value="male" data-i18n="Male">Male</option>
+        <option value="female" data-i18n="Female">Female</option>
+      </select>
+    </div>
+    <div>
+      <label for="activityLevel">Activity Level</label>
+      <select id="activityLevel">
+        <option value="1.2" data-i18n="Sedentary (Little exercise)">Sedentary (Little exercise)</option>
+        <option value="1.375" data-i18n="Lightly Active">Lightly Active</option>
+        <option value="1.55" data-i18n="Moderately Active">Moderately Active</option>
+        <option value="1.725" data-i18n="Very Active">Very Active</option>
+        <option value="1.9" data-i18n="Extra Active">Extra Active</option>
+      </select>
+    </div>
+  </div>
+  <button onclick="saveProfile()">Save Profile</button>
+  <p id="profileMessage" class="muted small"></p>
+</section>
+
+<!-- BMI CALCULATOR -->
+<section class="card">
+  <h2>⚖️ BMI Calculator</h2>
+  <div class="row">
+    <div>
+      <label for="height">Height (cm)</label>
+      <input id="height" type="number" min="100" max="250" placeholder="e.g. 170">
+    </div>
+    <div>
+      <label for="weight">Weight (kg)</label>
+      <input id="weight" type="number" min="20" max="300" step="0.1" placeholder="e.g. 65">
+    </div>
+  </div>
+  <div class="actions">
+    <button onclick="calculateBMI()">Calculate BMI</button>
+    <button class="secondary" onclick="resetCalculator()">Reset</button>
+  </div>
+  <p id="error" style="color:#dc2626"></p>
+
+  <div id="resultArea" class="hidden">
+    <div class="result">
+      <p>Your BMI Result</p>
+      <div class="big-number" id="bmiValue">0.0</div>
+      <span class="badge" id="category">Normal</span>
+      <p id="greeting"></p>
+    </div>
+
+    <h3>BMI Scale</h3>
+    <div class="scale"><div class="pointer" id="pointer"></div></div>
+    <div class="row small">
+      <span>Underweight: Below 18.5</span>
+      <span>Normal: 18.5–24.9</span>
+      <span>Overweight: 25–29.9</span>
+      <span>Obese: 30 or above</span>
+    </div>
+
+    <h3>🎯 Ideal Weight Range</h3>
+    <p id="idealWeight"></p>
+
+    <h3>📊 BMI Comparison</h3>
+    <p id="comparison"></p>
+
+    <h3>🔥 Estimated Daily Calories</h3>
+    <p id="calories"></p>
+
+    <h3>💧 Suggested Daily Water Intake</h3>
+    <p id="waterSuggestion"></p>
+
+    <div class="actions no-print">
+      <button onclick="downloadReport()">Download Health Report</button>
+      <button class="secondary" onclick="window.print()">Print Report</button>
+    </div>
+  </div>
+</section>
+
+<!-- HEALTH RECOMMENDATIONS -->
+<section id="recommendations" class="card hidden">
+  <h2>🥗 Personal Health Recommendations</h2>
+  <div class="grid">
+    <div>
+      <h3>Foods to Eat</h3>
+      <ul id="eatList"></ul>
+    </div>
+    <div>
+      <h3>Foods to Limit</h3>
+      <ul id="avoidList"></ul>
+    </div>
+    <div>
+      <h3>Recommended Exercises</h3>
+      <ul id="exerciseList"></ul>
+    </div>
+    <div>
+      <h3>Healthy Lifestyle Habits</h3>
+      <ul id="habitList"></ul>
+    </div>
+  </div>
+  <p class="small muted">These are general wellness suggestions, not a medical treatment plan.</p>
+</section>
+
+<!-- WATER TRACKER -->
+<section class="card">
+  <h2>💧 Daily Water Tracker</h2>
+  <p>Daily target: <strong id="waterTarget">2000 ml</strong></p>
+  <h3 id="waterCount">0 ml / 2000 ml</h3>
+  <div class="progress"><div id="waterProgress"></div></div>
+  <div class="actions">
+    <button onclick="addWater(250)">+ 250 ml</button>
+    <button onclick="addWater(500)">+ 500 ml</button>
+    <button class="secondary" onclick="resetWater()">Reset Water</button>
+  </div>
+</section>
+
+<!-- ACTIVITY TRACKER -->
+<section class="card">
+  <h2>🏃 Daily Activity Tracker</h2>
+  <label for="activityMinutes">Today's Exercise (minutes)</label>
+  <input id="activityMinutes" type="number" min="0" max="1440" placeholder="e.g. 30">
+  <button onclick="saveActivity()">Save Activity</button>
+  <p id="activityResult">Today's activity: 0 minutes</p>
+  <p class="muted small">A common adult activity goal is at least 150 minutes of moderate activity per week.</p>
+</section>
+
+<!-- WEEKLY PLANS -->
+<div class="grid">
+  <section class="card">
+    <h2>🥗 Weekly Diet Planner</h2>
+    <div id="dietPlan"></div>
+  </section>
+  <section class="card">
+    <h2>🏋️ Weekly Exercise Planner</h2>
+    <div id="exercisePlan"></div>
+  </section>
+</div>
+
+<!-- EXPANDED HEALTHY FOOD DATABASE -->
+<section class="card" id="healthyFoodDatabase">
+  <h2>🥑 Healthy Food Database</h2>
+  <p class="muted">Explore healthy foods, compare their nutrition, and find options for a balanced diet.</p>
+  <div class="food-toolbar">
+    <input id="foodSearch" placeholder="🔎 Search food, e.g. banana, egg, rice..." oninput="searchFood()">
+    <select id="foodSort" onchange="searchFood()" aria-label="Sort foods">
+      <option value="default" data-i18n="Sort: Default">Sort: Default</option>
+      <option value="calories-low" data-i18n="Calories: Low to High">Calories: Low to High</option>
+      <option value="calories-high" data-i18n="Calories: High to Low">Calories: High to Low</option>
+      <option value="protein-high" data-i18n="Protein: High to Low">Protein: High to Low</option>
+      <option value="fiber-high" data-i18n="Fiber: High to Low">Fiber: High to Low</option>
+    </select>
+  </div>
+  <div class="food-categories" id="foodCategories">
+    <button class="food-filter active" data-category="All" onclick="filterFoodCategory('All')" data-i18n="All Foods">All Foods</button>
+    <button class="food-filter" data-category="Fruits" onclick="filterFoodCategory('Fruits')">🍎 Fruits</button>
+    <button class="food-filter" data-category="Vegetables" onclick="filterFoodCategory('Vegetables')">🥦 Vegetables</button>
+    <button class="food-filter" data-category="Protein" onclick="filterFoodCategory('Protein')">🥚 Protein</button>
+    <button class="food-filter" data-category="Dairy" onclick="filterFoodCategory('Dairy')">🥛 Dairy</button>
+    <button class="food-filter" data-category="Grains" onclick="filterFoodCategory('Grains')">🌾 Grains</button>
+    <button class="food-filter" data-category="Nuts & Seeds" onclick="filterFoodCategory('Nuts & Seeds')">🥜 Nuts & Seeds</button>
+    <button class="food-filter" data-category="Legumes" onclick="filterFoodCategory('Legumes')">🫘 Legumes</button>
+  </div>
+  <p id="foodCount" class="food-count"></p>
+  <div id="foodResults" class="food-grid"></div>
+  <p class="food-note">Nutrition values are approximate estimates per 100 g of food. Actual values vary by variety, brand, preparation and cooking method. Images require an internet connection.</p>
+</section>
+
+<!-- GOALS -->
+<section class="card">
+  <h2>🏆 Health Goals & Achievements</h2>
+  <label for="goalWeight">Your Target Weight (kg)</label>
+  <input id="goalWeight" type="number" min="20" max="300" placeholder="Enter target weight">
+  <button onclick="saveGoal()">Save Goal</button>
+  <p id="goalMessage"></p>
+  <h3>Daily Goals</h3>
+  <label><input type="checkbox" id="goalWater" style="width:auto"> Drink enough water</label>
+  <label><input type="checkbox" id="goalExercise" style="width:auto"> Complete daily exercise</label>
+  <label><input type="checkbox" id="goalSleep" style="width:auto"> Get enough sleep</label>
+  <button onclick="saveDailyGoals()">Save Achievements</button>
+  <p id="achievementMessage"></p>
+</section>
+
+<!-- HISTORY -->
+<section class="card">
+  <h2>📈 BMI History & Progress Chart</h2>
+  <canvas id="historyChart" width="600" height="260"></canvas>
+  <div id="historyList"></div>
+  <button class="secondary" onclick="clearHistory()">Clear History</button>
+</section>
+
+<!-- DAILY HEALTH CONTENT -->
+<div class="grid">
+  <section class="card">
+    <h2>💡 Health Tip of the Day</h2>
+    <p id="dailyTip"></p>
+  </section>
+  <section class="card">
+    <h2>🌟 Motivational Quote</h2>
+    <p id="quote"></p>
+  </section>
+</div>
+
+<!-- REMINDER -->
+<section class="card">
+  <h2>⏰ Health Reminder</h2>
+  <p>Set a reminder to drink water or take a short break.</p>
+  <div class="row">
+    <div>
+      <label for="reminderTime">Reminder Time</label>
+      <input type="time" id="reminderTime">
+    </div>
+    <div>
+      <label for="reminderMessage">Reminder Message</label>
+      <select id="reminderMessage">
+        <option value="Time to drink some water!" data-i18n="Drink Water">Drink Water</option>
+        <option value="Take a short walk or exercise!" data-i18n="Exercise">Exercise</option>
+        <option value="Take a short break and relax!" data-i18n="Take a Break">Take a Break</option>
+      </select>
+    </div>
+  </div>
+  <button onclick="setReminder()">Set Reminder</button>
+  <button class="secondary" onclick="clearReminder()">Remove Reminder</button>
+  <p id="reminderStatus" class="muted"></p>
+</section>
+
+</main>
+
+<footer>
+  <p>Smart BMI & Wellness Calculator | Software Development I Project</p>
+  <p><strong>Made By MD AWAL SHEIKH</strong></p>
+  <p class="small">BMI is a screening tool, not a diagnosis. Consult a qualified health professional for personal medical advice.</p>
+</footer>
+
+<script>
+// ---------- STORAGE HELPERS ----------
+const getData = (key, fallback) => {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+const saveData = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+
+let currentBMI = null;
+let currentCategory = "";
+let reminderTimer = null;
+
+// ---------- THEME AND LANGUAGE ----------
+document.getElementById("theme").addEventListener("change", e => {
+  document.body.classList.remove("sunset","forest","dark");
+  if(e.target.value !== "ocean") document.body.classList.add(e.target.value);
+  localStorage.setItem("bmiTheme",e.target.value);
+});
+
+const savedTheme = localStorage.getItem("bmiTheme");
+if(savedTheme){
+  document.getElementById("theme").value = savedTheme;
+  if(savedTheme !== "ocean") document.body.classList.add(savedTheme);
+}
+
+// ---------- COMPLETE INTERFACE LANGUAGE SYSTEM ----------
+const UI_TRANSLATIONS = {
+  bn: {
+    "Smart BMI & Wellness Calculator":"স্মার্ট BMI ও সুস্থতা ক্যালকুলেটর",
+    "Your Personal Health and Lifestyle Assistant":"আপনার ব্যক্তিগত স্বাস্থ্য ও জীবনযাপন সহকারী",
+    "Ocean Theme":"ওশান থিম","Sunset Theme":"সানসেট থিম","Forest Theme":"ফরেস্ট থিম","Dark Theme":"ডার্ক থিম",
+    "A+ Text Size":"বড় লেখা A+","High Contrast":"উচ্চ কনট্রাস্ট",
+    "User Profile":"ব্যবহারকারীর প্রোফাইল","Your Name":"আপনার নাম","Enter your name":"আপনার নাম লিখুন",
+    "Age (18+)":"বয়স (১৮+) ","e.g. 25":"যেমন ২৫","Gender":"লিঙ্গ","Male":"পুরুষ","Female":"নারী",
+    "Activity Level":"কর্মতৎপরতার মাত্রা","Sedentary (Little exercise)":"কম সক্রিয় (ব্যায়াম খুব কম)","Lightly Active":"হালকা সক্রিয়","Moderately Active":"মাঝারি সক্রিয়","Very Active":"খুব সক্রিয়","Extra Active":"অত্যন্ত সক্রিয়",
+    "Save Profile":"প্রোফাইল সংরক্ষণ","Profile saved successfully!":"প্রোফাইল সফলভাবে সংরক্ষিত হয়েছে!",
+    "BMI Calculator":"BMI ক্যালকুলেটর","Height (cm)":"উচ্চতা (সেমি)","Weight (kg)":"ওজন (কেজি)","e.g. 170":"যেমন ১৭০","e.g. 65":"যেমন ৬৫",
+    "Calculate BMI":"BMI হিসাব করুন","Reset":"রিসেট","Your BMI Result":"আপনার BMI ফলাফল","Underweight":"কম ওজন","Normal":"স্বাভাবিক","Overweight":"অতিরিক্ত ওজন","Obese":"স্থূলতা",
+    "BMI Scale":"BMI মাত্রা","Below 18.5":"১৮.৫-এর নিচে","18.5–24.9":"১৮.৫–২৪.৯","25–29.9":"২৫–২৯.৯","30 or above":"৩০ বা তার বেশি",
+    "Ideal Weight Range":"আদর্শ ওজনের সীমা","BMI Comparison":"BMI তুলনা","Estimated Daily Calories":"আনুমানিক দৈনিক ক্যালরি","Suggested Daily Water Intake":"প্রস্তাবিত দৈনিক পানি গ্রহণ",
+    "Download Health Report":"স্বাস্থ্য রিপোর্ট ডাউনলোড","Print Report":"রিপোর্ট প্রিন্ট",
+    "Personal Health Recommendations":"ব্যক্তিগত স্বাস্থ্য পরামর্শ","Foods to Eat":"যেসব খাবার খেতে পারেন","Foods to Limit":"যেসব খাবার সীমিত রাখবেন","Recommended Exercises":"প্রস্তাবিত ব্যায়াম","Healthy Lifestyle Habits":"স্বাস্থ্যকর জীবনযাপনের অভ্যাস",
+    "These are general wellness suggestions, not a medical treatment plan.":"এগুলো সাধারণ সুস্থতা-সংক্রান্ত পরামর্শ, চিকিৎসার বিকল্প নয়।",
+    "Daily Water Tracker":"দৈনিক পানি ট্র্যাকার","Daily target:":"দৈনিক লক্ষ্য:","Reset Water":"পানির হিসাব রিসেট",
+    "Daily Activity Tracker":"দৈনিক কার্যক্রম ট্র্যাকার","Today's Exercise (minutes)":"আজকের ব্যায়াম (মিনিট)","Save Activity":"কার্যক্রম সংরক্ষণ",
+    "A common adult activity goal is at least 150 minutes of moderate activity per week.":"প্রাপ্তবয়স্কদের জন্য সাধারণ লক্ষ্য হলো সপ্তাহে অন্তত ১৫০ মিনিট মাঝারি শারীরিক কার্যক্রম।",
+    "Weekly Diet Planner":"সাপ্তাহিক খাদ্য পরিকল্পনা","Weekly Exercise Planner":"সাপ্তাহিক ব্যায়াম পরিকল্পনা",
+    "Healthy Food Database":"স্বাস্থ্যকর খাবারের তালিকা","Explore healthy foods, compare their nutrition, and find options for a balanced diet.":"স্বাস্থ্যকর খাবার দেখুন, পুষ্টিগুণ তুলনা করুন এবং সুষম খাদ্যের বিকল্প খুঁজুন।",
+    "Sort: Default":"সাজানো: ডিফল্ট","Calories: Low to High":"ক্যালরি: কম থেকে বেশি","Calories: High to Low":"ক্যালরি: বেশি থেকে কম","Protein: High to Low":"প্রোটিন: বেশি থেকে কম","Fiber: High to Low":"ফাইবার: বেশি থেকে কম",
+    "All Foods":"সব খাবার","Fruits":"ফল","Vegetables":"শাকসবজি","Protein":"প্রোটিন","Dairy":"দুগ্ধজাত","Grains":"শস্য","Nuts & Seeds":"বাদাম ও বীজ","Legumes":"ডালজাতীয়",
+    "Calories per 100 g":"প্রতি ১০০ গ্রামে ক্যালরি","Carbs":"কার্বোহাইড্রেট","Fat":"চর্বি","Fiber":"ফাইবার",
+    "Health Goals & Achievements":"স্বাস্থ্য লক্ষ্য ও অর্জন","Your Target Weight (kg)":"আপনার লক্ষ্য ওজন (কেজি)","Enter target weight":"লক্ষ্য ওজন লিখুন","Save Goal":"লক্ষ্য সংরক্ষণ","Daily Goals":"দৈনিক লক্ষ্য",
+    "Drink enough water":"পর্যাপ্ত পানি পান করুন","Complete daily exercise":"দৈনিক ব্যায়াম সম্পন্ন করুন","Get enough sleep":"পর্যাপ্ত ঘুমান","Save Achievements":"অর্জন সংরক্ষণ",
+    "BMI History & Progress Chart":"BMI ইতিহাস ও অগ্রগতির চার্ট","Clear History":"ইতিহাস মুছুন","Health Tip of the Day":"আজকের স্বাস্থ্য পরামর্শ","Motivational Quote":"অনুপ্রেরণামূলক উক্তি",
+    "Health Reminder":"স্বাস্থ্য রিমাইন্ডার","Set a reminder to drink water or take a short break.":"পানি পান বা বিরতি নেওয়ার জন্য রিমাইন্ডার সেট করুন।","Reminder Time":"রিমাইন্ডারের সময়","Reminder Message":"রিমাইন্ডার বার্তা",
+    "Drink Water":"পানি পান","Exercise":"ব্যায়াম","Take a Break":"বিরতি নিন","Set Reminder":"রিমাইন্ডার সেট করুন","Remove Reminder":"রিমাইন্ডার সরান",
+    "Smart BMI & Wellness Calculator | Software Development I Project":"স্মার্ট BMI ও সুস্থতা ক্যালকুলেটর | সফটওয়্যার ডেভেলপমেন্ট-I প্রজেক্ট",
+    "BMI is a screening tool, not a diagnosis. Consult a qualified health professional for personal medical advice.":"BMI একটি প্রাথমিক যাচাইয়ের উপায়, রোগ নির্ণয় নয়। ব্যক্তিগত চিকিৎসা পরামর্শের জন্য যোগ্য স্বাস্থ্যকর্মীর সঙ্গে কথা বলুন।",
+    "Showing":"দেখানো হচ্ছে","of":"মোট","healthy foods":"টি স্বাস্থ্যকর খাবার","No matching food found. Try another name or category.":"মিল পাওয়া যায়নি। অন্য নাম বা ক্যাটাগরি দিয়ে খুঁজুন।",
+    "Previous BMI:":"আগের BMI:","Change:":"পরিবর্তন:","This is your first recorded BMI.":"এটাই আপনার প্রথম সংরক্ষিত BMI।",
+    "Please enter valid height (100–250 cm) and weight (20–300 kg).":"সঠিক উচ্চতা (১০০–২৫০ সেমি) এবং ওজন (২০–৩০০ কেজি) লিখুন।",
+    "Please enter an age between 18 and 100 for this adult BMI calculator.":"এই প্রাপ্তবয়স্ক BMI ক্যালকুলেটরের জন্য ১৮ থেকে ১০০ বছরের মধ্যে বয়স লিখুন।",
+    "Enter a valid number of minutes":"মিনিটের সঠিক সংখ্যা লিখুন।","Enter a valid target weight":"সঠিক লক্ষ্য ওজন লিখুন।","Please select a reminder time":"রিমাইন্ডারের সময় নির্বাচন করুন।",
+    "No BMI records yet":"এখনও কোনো BMI রেকর্ড নেই।","Your BMI history will appear here":"আপনার BMI ইতিহাস এখানে দেখা যাবে।",
+    "Delete all BMI history?":"সব BMI ইতিহাস মুছে ফেলবেন?","Reminder removed.":"রিমাইন্ডার সরানো হয়েছে।",
+    "Time to drink some water!":"পানি পান করার সময় হয়েছে!","Take a short walk or exercise!":"একটু হাঁটুন বা ব্যায়াম করুন!","Take a short break and relax!":"একটু বিরতি নিয়ে বিশ্রাম নিন!"
+  },
+  hi: {
+    "Smart BMI & Wellness Calculator":"स्मार्ट BMI और वेलनेस कैलकुलेटर",
+    "Your Personal Health and Lifestyle Assistant":"आपका व्यक्तिगत स्वास्थ्य और जीवनशैली सहायक",
+    "Ocean Theme":"ओशन थीम","Sunset Theme":"सनसेट थीम","Forest Theme":"फॉरेस्ट थीम","Dark Theme":"डार्क थीम",
+    "A+ Text Size":"बड़ा टेक्स्ट A+","High Contrast":"हाई कॉन्ट्रास्ट",
+    "User Profile":"उपयोगकर्ता प्रोफ़ाइल","Your Name":"आपका नाम","Enter your name":"अपना नाम लिखें",
+    "Age (18+)":"आयु (18+) ","e.g. 25":"जैसे 25","Gender":"लिंग","Male":"पुरुष","Female":"महिला",
+    "Activity Level":"गतिविधि स्तर","Sedentary (Little exercise)":"कम सक्रिय","Lightly Active":"हल्के सक्रिय","Moderately Active":"मध्यम सक्रिय","Very Active":"बहुत सक्रिय","Extra Active":"अत्यधिक सक्रिय",
+    "Save Profile":"प्रोफ़ाइल सेव करें","Profile saved successfully!":"प्रोफ़ाइल सफलतापूर्वक सेव हुई!",
+    "BMI Calculator":"BMI कैलकुलेटर","Height (cm)":"ऊँचाई (सेमी)","Weight (kg)":"वज़न (किग्रा)","e.g. 170":"जैसे 170","e.g. 65":"जैसे 65",
+    "Calculate BMI":"BMI निकालें","Reset":"रीसेट","Your BMI Result":"आपका BMI परिणाम","Underweight":"कम वज़न","Normal":"सामान्य","Overweight":"अधिक वज़न","Obese":"मोटापा",
+    "BMI Scale":"BMI स्तर","Below 18.5":"18.5 से कम","18.5–24.9":"18.5–24.9","25–29.9":"25–29.9","30 or above":"30 या अधिक",
+    "Ideal Weight Range":"आदर्श वज़न सीमा","BMI Comparison":"BMI तुलना","Estimated Daily Calories":"अनुमानित दैनिक कैलोरी","Suggested Daily Water Intake":"अनुमानित दैनिक पानी",
+    "Download Health Report":"स्वास्थ्य रिपोर्ट डाउनलोड","Print Report":"रिपोर्ट प्रिंट",
+    "Personal Health Recommendations":"व्यक्तिगत स्वास्थ्य सुझाव","Foods to Eat":"खाने योग्य खाद्य पदार्थ","Foods to Limit":"सीमित करने योग्य खाद्य पदार्थ","Recommended Exercises":"सुझाए गए व्यायाम","Healthy Lifestyle Habits":"स्वस्थ जीवनशैली की आदतें",
+    "These are general wellness suggestions, not a medical treatment plan.":"ये सामान्य स्वास्थ्य सुझाव हैं, चिकित्सा उपचार योजना नहीं।",
+    "Daily Water Tracker":"दैनिक पानी ट्रैकर","Daily target:":"दैनिक लक्ष्य:","Reset Water":"पानी रीसेट",
+    "Daily Activity Tracker":"दैनिक गतिविधि ट्रैकर","Today's Exercise (minutes)":"आज का व्यायाम (मिनट)","Save Activity":"गतिविधि सेव करें",
+    "A common adult activity goal is at least 150 minutes of moderate activity per week.":"वयस्कों के लिए सामान्य लक्ष्य प्रति सप्ताह कम से कम 150 मिनट मध्यम गतिविधि है।",
+    "Weekly Diet Planner":"साप्ताहिक आहार योजना","Weekly Exercise Planner":"साप्ताहिक व्यायाम योजना",
+    "Healthy Food Database":"स्वस्थ खाद्य सूची","Explore healthy foods, compare their nutrition, and find options for a balanced diet.":"स्वस्थ भोजन देखें, पोषण की तुलना करें और संतुलित आहार के विकल्प खोजें।",
+    "Sort: Default":"क्रम: डिफ़ॉल्ट","Calories: Low to High":"कैलोरी: कम से अधिक","Calories: High to Low":"कैलोरी: अधिक से कम","Protein: High to Low":"प्रोटीन: अधिक से कम","Fiber: High to Low":"फाइबर: अधिक से कम",
+    "All Foods":"सभी भोजन","Fruits":"फल","Vegetables":"सब्ज़ियाँ","Protein":"प्रोटीन","Dairy":"डेयरी","Grains":"अनाज","Nuts & Seeds":"मेवे और बीज","Legumes":"दालें",
+    "Calories per 100 g":"प्रति 100 ग्राम कैलोरी","Carbs":"कार्ब्स","Fat":"वसा","Fiber":"फाइबर",
+    "Health Goals & Achievements":"स्वास्थ्य लक्ष्य और उपलब्धियाँ","Your Target Weight (kg)":"आपका लक्ष्य वज़न (किग्रा)","Enter target weight":"लक्ष्य वज़न लिखें","Save Goal":"लक्ष्य सेव करें","Daily Goals":"दैनिक लक्ष्य",
+    "Drink enough water":"पर्याप्त पानी पिएँ","Complete daily exercise":"दैनिक व्यायाम पूरा करें","Get enough sleep":"पर्याप्त नींद लें","Save Achievements":"उपलब्धियाँ सेव करें",
+    "BMI History & Progress Chart":"BMI इतिहास और प्रगति चार्ट","Clear History":"इतिहास साफ़ करें","Health Tip of the Day":"आज का स्वास्थ्य सुझाव","Motivational Quote":"प्रेरणादायक विचार",
+    "Health Reminder":"स्वास्थ्य रिमाइंडर","Set a reminder to drink water or take a short break.":"पानी पीने या छोटा ब्रेक लेने के लिए रिमाइंडर सेट करें।","Reminder Time":"रिमाइंडर समय","Reminder Message":"रिमाइंडर संदेश",
+    "Drink Water":"पानी पिएँ","Exercise":"व्यायाम","Take a Break":"ब्रेक लें","Set Reminder":"रिमाइंडर सेट करें","Remove Reminder":"रिमाइंडर हटाएँ",
+    "Smart BMI & Wellness Calculator | Software Development I Project":"स्मार्ट BMI और वेलनेस कैलकुलेटर | सॉफ्टवेयर डेवलपमेंट-I प्रोजेक्ट",
+    "BMI is a screening tool, not a diagnosis. Consult a qualified health professional for personal medical advice.":"BMI एक प्रारंभिक जाँच उपकरण है, निदान नहीं। व्यक्तिगत सलाह के लिए योग्य स्वास्थ्य विशेषज्ञ से संपर्क करें।",
+    "Showing":"दिखाए जा रहे हैं","of":"में से","healthy foods":"स्वस्थ खाद्य पदार्थ","No matching food found. Try another name or category.":"कोई मेल नहीं मिला। दूसरा नाम या श्रेणी खोजें।",
+    "Previous BMI:":"पिछला BMI:","Change:":"बदलाव:","This is your first recorded BMI.":"यह आपका पहला दर्ज BMI है।",
+    "Please enter valid height (100–250 cm) and weight (20–300 kg).":"सही ऊँचाई (100–250 सेमी) और वज़न (20–300 किग्रा) दर्ज करें।",
+    "Please enter an age between 18 and 100 for this adult BMI calculator.":"इस वयस्क BMI कैलकुलेटर के लिए 18 से 100 वर्ष की आयु दर्ज करें।",
+    "Enter a valid number of minutes":"मिनटों की सही संख्या दर्ज करें।","Enter a valid target weight":"सही लक्ष्य वज़न दर्ज करें।","Please select a reminder time":"रिमाइंडर का समय चुनें।",
+    "No BMI records yet":"अभी कोई BMI रिकॉर्ड नहीं है।","Your BMI history will appear here":"आपका BMI इतिहास यहाँ दिखाई देगा।",
+    "Delete all BMI history?":"क्या आप पूरा BMI इतिहास हटाना चाहते हैं?","Reminder removed.":"रिमाइंडर हटा दिया गया।",
+    "Time to drink some water!":"पानी पीने का समय हो गया है!","Take a short walk or exercise!":"थोड़ा टहलें या व्यायाम करें!","Take a short break and relax!":"थोड़ा ब्रेक लें और आराम करें!"
+  }
+};
+
+
+// Additional translations used in dynamically generated content.
+Object.assign(UI_TRANSLATIONS.bn,{
+
+  "🔎 Search food, e.g. banana, egg, rice...":"🔎 খাবার খুঁজুন, যেমন কলা, ডিম, ভাত...",
+  "Monday":"সোমবার","Tuesday":"মঙ্গলবার","Wednesday":"বুধবার","Thursday":"বৃহস্পতিবার","Friday":"শুক্রবার","Saturday":"শনিবার","Sunday":"রবিবার",
+  "Drink water regularly throughout the day.":"সারা দিন নিয়মিত পানি পান করুন।","Include fruits and vegetables in your meals.":"খাবারে ফল ও শাকসবজি রাখুন।","Take short movement breaks during long sitting periods.":"দীর্ঘ সময় বসে থাকলে মাঝে মাঝে উঠে হাঁটুন।","Try to maintain a regular sleep schedule.":"নিয়মিত ঘুমের সময় বজায় রাখুন।","Choose balanced meals and avoid extreme diets.":"সুষম খাবার বেছে নিন এবং কঠোর ডায়েট এড়িয়ে চলুন।","Regular physical activity supports overall health.":"নিয়মিত শারীরিক কার্যক্রম সামগ্রিক স্বাস্থ্য ভালো রাখে।",
+  "Small steps every day lead to big changes.":"প্রতিদিনের ছোট পদক্ষেপ বড় পরিবর্তন আনে।","Your health is your greatest wealth.":"আপনার স্বাস্থ্যই আপনার সবচেয়ে বড় সম্পদ।","Consistency is more important than perfection.":"নিখুঁত হওয়ার চেয়ে নিয়মিত থাকা বেশি গুরুত্বপূর্ণ।","Take care of your body. It is the place you live.":"নিজের শরীরের যত্ন নিন। এটাই আপনার বাসস্থান।","Progress, not perfection!":"নিখুঁততা নয়, অগ্রগতিই আসল!",
+  "kcal/day (estimated maintenance calories).":"কিলোক্যালরি/দিন (আনুমানিক প্রয়োজনীয় ক্যালরি)।","ml/day (approximate starting estimate).":"মিলি/দিন (প্রাথমিক আনুমানিক হিসাব)।","kg – ":"কেজি – ","kg":"কেজি","ml":"মিলি",
+  "Date":"তারিখ","BMI":"BMI","Hello":"হ্যালো","there":"বন্ধু","! Here is your BMI result.":"! আপনার BMI ফলাফল নিচে দেওয়া হলো।",
+  "Folate and vitamin K":"ফোলেট ও ভিটামিন K","Beta-carotene and fibre":"বিটা-ক্যারোটিন ও ফাইবার","Lycopene and vitamin C":"লাইকোপিন ও ভিটামিন C","Complete protein and choline":"সম্পূর্ণ প্রোটিন ও কোলিন","Protein and iron":"প্রোটিন ও আয়রন","Protein and selenium":"প্রোটিন ও সেলেনিয়াম","Protein, iron and zinc":"প্রোটিন, আয়রন ও জিঙ্ক","Plant protein and calcium":"উদ্ভিজ্জ প্রোটিন ও ক্যালসিয়াম","Beta-glucan fibre":"বিটা-গ্লুকান ফাইবার","Whole-grain carbohydrates":"পূর্ণ শস্যের কার্বোহাইড্রেট","Protein and magnesium":"প্রোটিন ও ম্যাগনেসিয়াম","Soluble fibre":"দ্রবণীয় ফাইবার","Magnesium":"ম্যাগনেসিয়াম","Vitamin E and healthy fats":"ভিটামিন E ও স্বাস্থ্যকর ফ্যাট","Plant omega-3 fats":"উদ্ভিজ্জ ওমেগা-৩ ফ্যাট","Magnesium and zinc":"ম্যাগনেসিয়াম ও জিঙ্ক","Plant protein and iron":"উদ্ভিজ্জ প্রোটিন ও আয়রন","Complete plant protein":"সম্পূর্ণ উদ্ভিজ্জ প্রোটিন","Fibre and vitamin C":"ফাইবার ও ভিটামিন C","Polyphenols and fibre":"পলিফেনল ও ফাইবার","Vitamin C and manganese":"ভিটামিন C ও ম্যাঙ্গানিজ","Vitamin C and carotenoids":"ভিটামিন C ও ক্যারোটিনয়েড","Protein and calcium":"প্রোটিন ও ক্যালসিয়াম","Daily target:":"দৈনিক লক্ষ্য:","Nutrition values are approximate estimates per 100 g of food. Actual values vary by variety, brand, preparation and cooking method. Images require an internet connection.":"পুষ্টিগুণ প্রতি ১০০ গ্রামের আনুমানিক হিসাব। খাবারের ধরন, ব্র্যান্ড ও রান্নার পদ্ধতি অনুযায়ী মান পরিবর্তিত হতে পারে। ছবির জন্য ইন্টারনেট প্রয়োজন।",
+  "Gender":"লিঙ্গ","Age (18+)":"বয়স (১৮+) ","BMI":"BMI","Calories":"ক্যালরি","Protein":"প্রোটিন","Fiber":"ফাইবার","Carbs":"কার্বোহাইড্রেট","Fat":"চর্বি",
+  "kg/day (estimated maintenance calories).":"কেজি/দিন (আনুমানিক ক্যালরি)।","ml/day (approximate starting estimate).":"মিলি/দিন (প্রাথমিক আনুমানিক হিসাব)।",
+  "Showing":"দেখানো হচ্ছে","of":"মোট","healthy foods":"টি স্বাস্থ্যকর খাব",
+  "Water intake":"পানি গ্রহণ",
+  "Hello":"হ্যালো","there":"বন্ধু","! Here is your BMI result.":"! আপনার BMI ফলাফল নিচে দেওয়া হলো।",
+  "estimated maintenance calories":"আনুমানিক দৈনিক ক্যালরি","You completed ":"আপনি সম্পন্ন করেছেন "," out of 3 daily goals. Keep going!":"টি দৈনিক লক্ষ্যের মধ্যে। চালিয়ে যান!",
+  "Target weight saved: ":"লক্ষ্য ওজন সংরক্ষিত হয়েছে: ","Today's activity: ":"আজকের কার্যক্রম: ","Reminder saved for ":"রিমাইন্ডার সংরক্ষিত হয়েছে: ","Keep this page open to receive it.":"রিমাইন্ডার পেতে পেজটি খোলা রাখুন।",
+  "Oats, fruit | Rice, vegetables and fish | Soup and salad":"ওটস ও ফল | ভাত, সবজি ও মাছ | স্যুপ ও সালাদ",
+  "Egg and toast | Chicken and vegetables | Lentils and rice":"ডিম ও টোস্ট | মুরগি ও সবজি | ডাল ও ভাত",
+  "Yogurt and fruit | Rice and beans | Grilled fish":"দই ও ফল | ভাত ও শিম | গ্রিল করা মাছ",
+  "Milk and oats | Vegetable khichuri | Chicken and salad":"দুধ ও ওটস | সবজি খিচুড়ি | মুরগি ও সালাদ",
+  "Eggs and fruit | Fish and rice | Vegetable soup":"ডিম ও ফল | মাছ ও ভাত | সবজি স্যুপ",
+  "Whole-grain bread | Chicken and vegetables | Lentils":"আটা রুটি | মুরগি ও সবজি | ডাল",
+  "Fruit and yogurt | Balanced home meal | Light dinner":"ফল ও দই | সুষম ঘরের খাবার | হালকা রাতের খাবার",
+  "30-minute walk":"৩০ মিনিট হাঁটা","Light strength training":"হালকা শক্তিবর্ধক ব্যায়াম","30-minute cycling":"৩০ মিনিট সাইক্লিং","Stretching and walking":"স্ট্রেচিং ও হাঁটা","Strength training":"শক্তিবর্ধক ব্যায়াম","Swimming or outdoor activity":"সাঁতার বা বাইরের কার্যক্রম","Rest and gentle stretching":"বিশ্রাম ও হালকা স্ট্রেচিং",
+  "Milk, yogurt and eggs":"দুধ, দই ও ডিম","Rice, potatoes and whole grains":"ভাত, আলু ও পূর্ণ শস্য","Nuts and peanut butter":"বাদাম ও পিনাট বাটার","Fish, chicken and beans":"মাছ, মুরগি ও শিম","Bananas and avocados":"কলা ও অ্যাভোকাডো","Skipping meals":"খাবার বাদ দেওয়া","Excessive caffeine":"অতিরিক্ত ক্যাফেইন","Replacing meals with junk food":"মূল খাবারের বদলে জাঙ্ক ফুড","Walking":"হাঁটা","Light cycling":"হালকা সাইক্লিং","Gentle resistance exercises":"হালকা রেজিস্ট্যান্স ব্যায়াম","Eat regular balanced meals":"নিয়মিত সুষম খাবার খান","Get enough sleep":"পর্যাপ্ত ঘুমান","Eat healthy snacks":"স্বাস্থ্যকর নাশতা খান","Consult a professional if weight loss is unexplained":"কারণ ছাড়া ওজন কমলে বিশেষজ্ঞের পরামর্শ নিন",
+  "Vegetables and fruits":"শাকসবজি ও ফল","Whole grains":"পূর্ণ শস্য","Fish, eggs and beans":"মাছ, ডিম ও শিম","Nuts and seeds":"বাদাম ও বীজ","Milk or yogurt":"দুধ বা দই","Excessive sugary drinks":"অতিরিক্ত চিনিযুক্ত পানীয়","Too much processed food":"অতিরিক্ত প্রক্রিয়াজাত খাবার","Excessive salt":"অতিরিক্ত লবণ","Brisk walking":"দ্রুত হাঁটা","Cycling":"সাইক্লিং","Swimming":"সাঁতার","Maintain balanced meals":"সুষম খাবার বজায় রাখুন","Stay physically active":"শারীরিকভাবে সক্রিয় থাকুন","Sleep 7–9 hours":"৭–৯ ঘণ্টা ঘুমান","Drink water regularly":"নিয়মিত পানি পান করুন",
+  "Vegetables and salads":"শাকসবজি ও সালাদ","Lean protein":"চর্বিহীন প্রোটিন","Fruits in suitable portions":"পরিমিত পরিমাণে ফল","Beans and lentils":"শিম ও ডাল","Sugary drinks":"চিনিযুক্ত পানীয়","Frequent fried foods":"ঘন ঘন ভাজা খাবার","Large portions of highly processed snacks":"অতিরিক্ত প্রক্রিয়াজাত নাশতা বেশি পরিমাণে","Gradual strength training":"ধীরে ধীরে শক্তিবর্ধক ব্যায়াম","Build sustainable eating habits":"দীর্ঘমেয়াদি স্বাস্থ্যকর খাদ্যাভ্যাস গড়ুন","Monitor progress gradually":"ধীরে ধীরে অগ্রগতি পর্যবেক্ষণ করুন","Sleep regularly":"নিয়মিত ঘুমান","Avoid crash diets":"অস্বাস্থ্যকর দ্রুত ডায়েট এড়িয়ে চলুন",
+  "High-fibre foods":"উচ্চ ফাইবারযুক্ত খাবার","Balanced home-cooked meals":"সুষম ঘরে তৈরি খাবার","Frequent sugary drinks":"ঘন ঘন চিনিযুক্ত পানীয়","Excessive fried foods":"অতিরিক্ত ভাজা খাবার","Highly processed snacks":"অতি প্রক্রিয়াজাত নাশতা","Start with comfortable walking":"আরামদায়ক হাঁটা দিয়ে শুরু করুন","Low-impact cycling":"কম চাপের সাইক্লিং","Gradual supervised exercise":"বিশেষজ্ঞের তত্ত্বাবধানে ধীরে ব্যায়াম","Set realistic health goals":"বাস্তবসম্মত স্বাস্থ্য লক্ষ্য নির্ধারণ করুন","Make gradual lifestyle changes":"ধীরে ধীরে জীবনযাপনে পরিবর্তন আনুন","Track progress safely":"নিরাপদে অগ্রগতি পর্যবেক্ষণ করুন","Discuss a suitable plan with a healthcare professional":"স্বাস্থ্য বিশেষজ্ঞের সঙ্গে উপযুক্ত পরিকল্পনা নিয়ে কথা বলুন",
+  "Vitamin C and fibre":"ভিটামিন C ও ফাইবার","Potassium and vitamin B6":"পটাশিয়াম ও ভিটামিন B6","Vitamin C":"ভিটামিন C","Vitamin A and vitamin C":"ভিটামিন A ও C","Vitamin A and C":"ভিটামিন A ও C","Vitamin C and antioxidants":"ভিটামিন C ও অ্যান্টিঅক্সিডেন্ট","Antioxidants":"অ্যান্টিঅক্সিডেন্ট","Plant antioxidants":"উদ্ভিজ্জ অ্যান্টিঅক্সিডেন্ট","Fibre":"ফাইবার","Water and lycopene":"পানি ও লাইকোপিন","Monounsaturated fats":"মনোআনস্যাচুরেটেড ফ্যাট","Vitamin A and carotenoids":"ভিটামিন A ও ক্যারোটিনয়েড","Vitamin K":"ভিটামিন K","Beta-carotene":"বিটা-ক্যারোটিন","Lycopene and vitamin C":"লাইকোপিন ও ভিটামিন C","Hydration":"শরীরে পানির ভারসাম্য","Vitamin C and K":"ভিটামিন C ও K","Vitamin A":"ভিটামিন A","Folate":"ফোলেট","Complete protein and choline":"সম্পূর্ণ প্রোটিন ও কোলিন","Lean protein":"চর্বিহীন প্রোটিন","Omega-3 fats":"ওমেগা-৩ ফ্যাট","Protein and selenium":"প্রোটিন ও সেলেনিয়াম","Omega-3 and calcium":"ওমেগা-৩ ও ক্যালসিয়াম","Protein, iron and zinc":"প্রোটিন, আয়রন ও জিঙ্ক","Plant protein and calcium":"উদ্ভিজ্জ প্রোটিন ও ক্যালসিয়াম","Calcium and protein":"ক্যালসিয়াম ও প্রোটিন","Calcium and live cultures":"ক্যালসিয়াম ও উপকারী ব্যাকটেরিয়া","Higher protein":"বেশি প্রোটিন","Protein and magnesium":"প্রোটিন ও ম্যাগনেসিয়াম","Vitamin E and healthy fats":"ভিটামিন E ও স্বাস্থ্যকর ফ্যাট","Plant omega-3 fats":"উদ্ভিজ্জ ওমেগা-৩ ফ্যাট","Fibre and omega-3":"ফাইবার ও ওমেগা-৩","Magnesium and zinc":"ম্যাগনেসিয়াম ও জিঙ্ক","Protein and healthy fats":"প্রোটিন ও স্বাস্থ্যকর ফ্যাট","Plant protein and iron":"উদ্ভিজ্জ প্রোটিন ও আয়রন","Fibre and plant protein":"ফাইবার ও উদ্ভিজ্জ প্রোটিন","Plant protein and fibre":"উদ্ভিজ্জ প্রোটিন ও ফাইবার","Fibre and folate":"ফাইবার ও ফোলেট","Complete plant protein":"সম্পূর্ণ উদ্ভিজ্জ প্রোটিন","Plant protein and folate":"উদ্ভিজ্জ প্রোটিন ও ফোলেট"
+});
+Object.assign(UI_TRANSLATIONS.hi,{
+
+  "🔎 Search food, e.g. banana, egg, rice...":"🔎 भोजन खोजें, जैसे केला, अंडा, चावल...",
+  "Monday":"सोमवार","Tuesday":"मंगलवार","Wednesday":"बुधवार","Thursday":"गुरुवार","Friday":"शुक्रवार","Saturday":"शनिवार","Sunday":"रविवार",
+  "Drink water regularly throughout the day.":"दिनभर नियमित रूप से पानी पिएँ।","Include fruits and vegetables in your meals.":"अपने भोजन में फल और सब्ज़ियाँ शामिल करें।","Take short movement breaks during long sitting periods.":"लंबे समय तक बैठने पर बीच-बीच में चलें।","Try to maintain a regular sleep schedule.":"नियमित नींद का समय बनाए रखें।","Choose balanced meals and avoid extreme diets.":"संतुलित भोजन चुनें और कठोर डाइट से बचें।","Regular physical activity supports overall health.":"नियमित शारीरिक गतिविधि समग्र स्वास्थ्य को बेहतर रखती है।",
+  "Small steps every day lead to big changes.":"हर दिन के छोटे कदम बड़े बदलाव लाते हैं।","Your health is your greatest wealth.":"आपका स्वास्थ्य आपकी सबसे बड़ी संपत्ति है।","Consistency is more important than perfection.":"निरंतरता पूर्णता से अधिक महत्वपूर्ण है।","Take care of your body. It is the place you live.":"अपने शरीर का ध्यान रखें। यही आपका घर है।","Progress, not perfection!":"पूर्णता नहीं, प्रगति ज़रूरी है!",
+  "kcal/day (estimated maintenance calories).":"किलो कैलोरी/दिन (अनुमानित आवश्यक कैलोरी)।","ml/day (approximate starting estimate).":"मिली/दिन (प्रारंभिक अनुमान)।","Date":"तारीख","BMI":"BMI",
+  "Folate and vitamin K":"फोलेट और विटामिन K","Beta-carotene and fibre":"बीटा-कैरोटीन और फाइबर","Lycopene and vitamin C":"लाइकोपीन और विटामिन C","Complete protein and choline":"पूर्ण प्रोटीन और कोलीन","Protein and iron":"प्रोटीन और आयरन","Protein and selenium":"प्रोटीन और सेलेनियम","Protein, iron and zinc":"प्रोटीन, आयरन और जिंक","Plant protein and calcium":"पौधों का प्रोटीन और कैल्शियम","Beta-glucan fibre":"बीटा-ग्लूकन फाइबर","Whole-grain carbohydrates":"साबुत अनाज के कार्बोहाइड्रेट","Protein and magnesium":"प्रोटीन और मैग्नीशियम","Soluble fibre":"घुलनशील फाइबर","Magnesium":"मैग्नीशियम","Vitamin E and healthy fats":"विटामिन E और स्वस्थ वसा","Plant omega-3 fats":"पौधों का ओमेगा-3","Magnesium and zinc":"मैग्नीशियम और जिंक","Plant protein and iron":"पौधों का प्रोटीन और आयरन","Complete plant protein":"पूर्ण पौधों का प्रोटीन","Fibre and vitamin C":"फाइबर और विटामिन C","Polyphenols and fibre":"पॉलीफेनॉल और फाइबर","Vitamin C and manganese":"विटामिन C और मैंगनीज़","Vitamin C and carotenoids":"विटामिन C और कैरोटीनॉयड","Protein and calcium":"प्रोटीन और कैल्शियम","Daily target:":"दैनिक लक्ष्य:","Nutrition values are approximate estimates per 100 g of food. Actual values vary by variety, brand, preparation and cooking method. Images require an internet connection.":"पोषण मान प्रति 100 ग्राम के अनुमान हैं। किस्म, ब्रांड और पकाने के तरीके के अनुसार मान बदल सकते हैं। चित्रों के लिए इंटरनेट आवश्यक है।",
+  "Gender":"लिंग","Age (18+)":"आयु (18+) ","BMI":"BMI","Calories":"कैलोरी","Protein":"प्रोटीन","Fiber":"फाइबर","Carbs":"कार्ब्स","Fat":"वसा",
+  "kg/day (estimated maintenance calories).":"किग्रा/दिन (अनुमानित कैलोरी)।","ml/day (approximate starting estimate).":"मिली/दिन (प्रारंभिक अनुमान)।",
+  "Showing":"दिखाए जा रहे हैं","of":"में से","healthy foods":"स्वस्थ खाद्य पदार्थ",
+  "Hello":"नमस्ते","there":"दोस्त","! Here is your BMI result.":"! आपका BMI परिणाम नीचे है।",
+  "You completed ":"आपने "," out of 3 daily goals. Keep going!":" में से लक्ष्य पूरे किए। ऐसे ही जारी रखें!",
+  "Target weight saved: ":"लक्ष्य वज़न सेव हुआ: ","Today's activity: ":"आज की गतिविधि: ","Reminder saved for ":"रिमाइंडर सेव हुआ: ","Keep this page open to receive it.":"रिमाइंडर पाने के लिए पेज खुला रखें।",
+  "Oats, fruit | Rice, vegetables and fish | Soup and salad":"ओट्स और फल | चावल, सब्ज़ियाँ और मछली | सूप और सलाद",
+  "Egg and toast | Chicken and vegetables | Lentils and rice":"अंडा और टोस्ट | चिकन और सब्ज़ियाँ | दाल और चावल",
+  "Yogurt and fruit | Rice and beans | Grilled fish":"दही और फल | चावल और बीन्स | ग्रिल्ड मछली",
+  "Milk and oats | Vegetable khichuri | Chicken and salad":"दूध और ओट्स | सब्ज़ी खिचड़ी | चिकन और सलाद",
+  "Eggs and fruit | Fish and rice | Vegetable soup":"अंडे और फल | मछली और चावल | सब्ज़ी का सूप",
+  "Whole-grain bread | Chicken and vegetables | Lentils":"साबुत अनाज की ब्रेड | चिकन और सब्ज़ियाँ | दाल",
+  "Fruit and yogurt | Balanced home meal | Light dinner":"फल और दही | संतुलित घर का भोजन | हल्का रात का खाना",
+  "30-minute walk":"30 मिनट की सैर","Light strength training":"हल्का शक्ति प्रशिक्षण","30-minute cycling":"30 मिनट साइकिल चलाना","Stretching and walking":"स्ट्रेचिंग और पैदल चलना","Strength training":"शक्ति प्रशिक्षण","Swimming or outdoor activity":"तैराकी या बाहरी गतिविधि","Rest and gentle stretching":"आराम और हल्की स्ट्रेचिंग",
+  "Vitamin C and fibre":"विटामिन C और फाइबर","Potassium and vitamin B6":"पोटैशियम और विटामिन B6","Vitamin C":"विटामिन C","Vitamin A and vitamin C":"विटामिन A और C","Vitamin A and C":"विटामिन A और C","Vitamin C and antioxidants":"विटामिन C और एंटीऑक्सिडेंट","Antioxidants":"एंटीऑक्सिडेंट","Plant antioxidants":"पौधों के एंटीऑक्सिडेंट","Fibre":"फाइबर","Water and lycopene":"पानी और लाइकोपीन","Monounsaturated fats":"मोनोअनसैचुरेटेड फैट","Vitamin A and carotenoids":"विटामिन A और कैरोटीनॉयड","Vitamin K":"विटामिन K","Beta-carotene":"बीटा-कैरोटीन","Lycopene and vitamin C":"लाइकोपीन और विटामिन C","Hydration":"शरीर में पानी का संतुलन","Vitamin C and K":"विटामिन C और K","Vitamin A":"विटामिन A","Folate":"फोलेट","Complete protein and choline":"पूर्ण प्रोटीन और कोलीन","Lean protein":"लीन प्रोटीन","Omega-3 fats":"ओमेगा-3 फैट","Protein and selenium":"प्रोटीन और सेलेनियम","Omega-3 and calcium":"ओमेगा-3 और कैल्शियम","Protein, iron and zinc":"प्रोटीन, आयरन और जिंक","Plant protein and calcium":"पौधों से मिलने वाला प्रोटीन और कैल्शियम","Calcium and protein":"कैल्शियम और प्रोटीन","Calcium and live cultures":"कैल्शियम और उपयोगी कल्चर","Higher protein":"अधिक प्रोटीन","Protein and magnesium":"प्रोटीन और मैग्नीशियम","Vitamin E and healthy fats":"विटामिन E और स्वस्थ वसा","Plant omega-3 fats":"पौधों से मिलने वाला ओमेगा-3","Fibre and omega-3":"फाइबर और ओमेगा-3","Magnesium and zinc":"मैग्नीशियम और जिंक","Protein and healthy fats":"प्रोटीन और स्वस्थ वसा","Plant protein and iron":"पौधों से मिलने वाला प्रोटीन और आयरन","Fibre and plant protein":"फाइबर और पौधों का प्रोटीन","Plant protein and fibre":"पौधों का प्रोटीन और फाइबर","Fibre and folate":"फाइबर और फोलेट","Complete plant protein":"पूर्ण पौधों का प्रोटीन","Plant protein and folate":"पौधों का प्रोटीन और फोलेट"
+});
+
+const originalTextNodes = new WeakMap();
+const originalAttributes = new WeakMap();
+let currentLanguage = localStorage.getItem("bmiLanguage") || "en";
+function tr(text){
+  const value=String(text);
+  return currentLanguage==="en" ? value : ((UI_TRANSLATIONS[currentLanguage]||{})[value] || value);
+}
+function translateNode(node){
+  if(node.nodeType===Node.TEXT_NODE){
+    if(node.parentElement && node.parentElement.tagName==="OPTION" && node.parentElement.hasAttribute("data-i18n")) return;
+    if(!originalTextNodes.has(node)) originalTextNodes.set(node,node.nodeValue);
+    const original=originalTextNodes.get(node);
+    const leading=(original.match(/^\s*/) || [""])[0];
+    const trailing=(original.match(/\s*$/) || [""])[0];
+    const core=original.trim();
+    if(core) node.nodeValue=leading+tr(core)+trailing;
+  } else if(node.nodeType===Node.ELEMENT_NODE){
+    ["placeholder","aria-label","title"].forEach(attr=>{
+      if(node.hasAttribute(attr)){
+        let saved=originalAttributes.get(node);
+        if(!saved){saved={};originalAttributes.set(node,saved);}
+        if(saved[attr]===undefined)saved[attr]=node.getAttribute(attr);
+        node.setAttribute(attr,tr(saved[attr]));
+      }
+    });
+    if(node.tagName==="OPTION" && node.hasAttribute("data-i18n")){
+      const key=node.getAttribute("data-i18n");
+      const label=tr(key);
+      if(node.textContent!==label) node.textContent=label;
+    }
+  }
+}
+function applyTranslations(root=document){
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+  nodes.forEach(translateNode);
+  if(root.nodeType===Node.ELEMENT_NODE)translateNode(root);
+  root.querySelectorAll?.("input,button,select,option,[aria-label],[title]").forEach(translateNode);
+  document.documentElement.lang=currentLanguage;
+  document.body.setAttribute("lang",currentLanguage);
+  // Update the main heading only during a full-page translation.
+  // This avoids repeatedly rebuilding the header while dynamic cards are rendered.
+  if(root===document){
+    document.querySelector("header h1").textContent=tr("Smart BMI & Wellness Calculator");
+    document.querySelector("header p").textContent=tr("Your Personal Health and Lifestyle Assistant");
+  }
+}
+function setLanguage(language){
+  currentLanguage=language;
+  localStorage.setItem("bmiLanguage",language);
+  applyTranslations();
+  searchFood();
+  if(currentBMI!==null)showRecommendations(currentCategory);
+  renderPlans();dailyContent();updateWater();loadActivity();showHistory();
+}
+document.getElementById("language").addEventListener("change",e=>setLanguage(e.target.value));
+const savedLanguage=localStorage.getItem("bmiLanguage");
+if(savedLanguage)document.getElementById("language").value=savedLanguage;
+// Translate newly generated content without re-translating the entire page.
+// This keeps dynamic food cards and planner updates responsive.
+const translationObserver=new MutationObserver(records=>{
+  records.forEach(record=>record.addedNodes.forEach(node=>{
+    if(node.nodeType===Node.TEXT_NODE){
+      translateNode(node);
+    }else if(node.nodeType===Node.ELEMENT_NODE){
+      translateNode(node);
+      const walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT);
+      while(walker.nextNode())translateNode(walker.currentNode);
+      node.querySelectorAll?.("input,button,select,option,[aria-label],[title]").forEach(translateNode);
+    }
+  }));
+});
+translationObserver.observe(document.body,{childList:true,subtree:true});
+
+function toggleLargeText(){
+  document.body.classList.toggle("large-text");
+}
+function toggleContrast(){
+  document.body.classList.toggle("high-contrast");
+}
+
+// ---------- USER PROFILE ----------
+function saveProfile(){
+  const profile={
+    name:document.getElementById("userName").value,
+    age:document.getElementById("age").value,
+    gender:document.getElementById("gender").value,
+    activity:document.getElementById("activityLevel").value
+  };
+  saveData("bmiProfile",profile);
+  document.getElementById("profileMessage").textContent=tr("Profile saved successfully!");
+}
+function loadProfile(){
+  const p=getData("bmiProfile",null);
+  if(!p)return;
+  document.getElementById("userName").value=p.name||"";
+  document.getElementById("age").value=p.age||"";
+  document.getElementById("gender").value=p.gender||"male";
+  document.getElementById("activityLevel").value=p.activity||"1.2";
+}
+
+// ---------- BMI CALCULATOR ----------
+function calculateBMI(){
+  const height=Number(document.getElementById("height").value);
+  const weight=Number(document.getElementById("weight").value);
+  const age=Number(document.getElementById("age").value);
+  const gender=document.getElementById("gender").value;
+  const activity=Number(document.getElementById("activityLevel").value);
+  const error=document.getElementById("error");
+  error.textContent="";
+
+  if(!height||!weight||height<100||height>250||weight<20||weight>300){
+    error.textContent=tr("Please enter valid height (100–250 cm) and weight (20–300 kg).");
+    return;
+  }
+  if(!age||age<18||age>100){
+    error.textContent=tr("Please enter an age between 18 and 100 for this adult BMI calculator.");
+    return;
+  }
+
+  const h=height/100;
+  currentBMI=weight/(h*h);
+  currentBMI=Number(currentBMI.toFixed(1));
+
+  if(currentBMI<18.5)currentCategory="Underweight";
+  else if(currentBMI<25)currentCategory="Normal";
+  else if(currentBMI<30)currentCategory="Overweight";
+  else currentCategory="Obese";
+
+  document.getElementById("resultArea").classList.remove("hidden");
+  document.getElementById("recommendations").classList.remove("hidden");
+  document.getElementById("bmiValue").textContent=currentBMI;
+  document.getElementById("category").textContent=tr(currentCategory);
+  document.getElementById("greeting").textContent=
+    tr("Hello")+" "+(document.getElementById("userName").value||tr("there"))+tr("! Here is your BMI result.");
+
+  const pointer=Math.min(100,Math.max(0,(currentBMI/40)*100));
+  document.getElementById("pointer").style.left=pointer+"%";
+
+  // Ideal weight range based on adult BMI 18.5–24.9
+  const low=18.5*h*h;
+  const high=24.9*h*h;
+  document.getElementById("idealWeight").textContent=
+    low.toFixed(1)+" kg – "+high.toFixed(1)+" kg";
+
+  // BMI comparison
+  const history=getData("bmiHistory",[]);
+  if(history.length){
+    const previous=history[history.length-1].bmi;
+    const difference=Number((currentBMI-previous).toFixed(1));
+    document.getElementById("comparison").textContent=
+      tr("Previous BMI:")+" "+previous+". "+tr("Change:")+" "+
+      (difference>0?"+":"")+difference;
+  }else{
+    document.getElementById("comparison").textContent=tr("This is your first recorded BMI.");
+  }
+
+  // Estimated calories using Mifflin-St Jeor equation
+  const bmr=10*weight+6.25*height-5*age+(gender==="male"?5:-161);
+  const calories=Math.round(bmr*activity);
+  document.getElementById("calories").textContent=
+    calories+" kcal/day (estimated maintenance calories).";
+
+  const water=Math.round(weight*35);
+  document.getElementById("waterSuggestion").textContent=
+    water+" ml/day (approximate starting estimate).";
+  document.getElementById("waterTarget").textContent=water+" ml";
+
+  saveData("waterTarget",water);
+  updateWater();
+
+  showRecommendations(currentCategory);
+  saveBMIHistory(currentBMI);
+  drawChart();
+  showHistory();
+  document.getElementById("resultArea").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+// ---------- RECOMMENDATIONS ----------
+const recommendations={
+  Underweight:{
+    eat:["Milk, yogurt and eggs","Rice, potatoes and whole grains","Nuts and peanut butter","Fish, chicken and beans","Bananas and avocados"],
+    avoid:["Skipping meals","Excessive caffeine","Replacing meals with junk food"],
+    exercise:["Strength training","Walking","Light cycling","Gentle resistance exercises"],
+    habits:["Eat regular balanced meals","Get enough sleep","Eat healthy snacks","Consult a professional if weight loss is unexplained"]
+  },
+  Normal:{
+    eat:["Vegetables and fruits","Whole grains","Fish, eggs and beans","Nuts and seeds","Milk or yogurt"],
+    avoid:["Excessive sugary drinks","Too much processed food","Excessive salt"],
+    exercise:["Brisk walking","Cycling","Swimming","Strength training"],
+    habits:["Maintain balanced meals","Stay physically active","Sleep 7–9 hours","Drink water regularly"]
+  },
+  Overweight:{
+    eat:["Vegetables and salads","Whole grains","Lean protein","Fruits in suitable portions","Beans and lentils"],
+    avoid:["Sugary drinks","Frequent fried foods","Large portions of highly processed snacks"],
+    exercise:["Brisk walking","Cycling","Swimming","Gradual strength training"],
+    habits:["Build sustainable eating habits","Monitor progress gradually","Sleep regularly","Avoid crash diets"]
+  },
+  Obese:{
+    eat:["Vegetables and fruits","High-fibre foods","Lean protein","Whole grains","Balanced home-cooked meals"],
+    avoid:["Frequent sugary drinks","Excessive fried foods","Highly processed snacks"],
+    exercise:["Start with comfortable walking","Low-impact cycling","Swimming","Gradual supervised exercise"],
+    habits:["Set realistic health goals","Make gradual lifestyle changes","Track progress safely","Discuss a suitable plan with a healthcare professional"]
+  }
+};
+
+function fillList(id,items){
+  document.getElementById(id).innerHTML=items.map(x=>"<li>"+x+"</li>").join("");
+}
+function showRecommendations(category){
+  const r=recommendations[category];
+  fillList("eatList",r.eat);
+  fillList("avoidList",r.avoid);
+  fillList("exerciseList",r.exercise);
+  fillList("habitList",r.habits);
+}
+
+// ---------- RESET ----------
+function resetCalculator(){
+  ["height","weight"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("resultArea").classList.add("hidden");
+  document.getElementById("recommendations").classList.add("hidden");
+  document.getElementById("error").textContent="";
+  currentBMI=null;
+}
+
+// ---------- WATER TRACKER ----------
+function todayKey(){return new Date().toISOString().slice(0,10)}
+function waterKey(){return "water_"+todayKey()}
+function updateWater(){
+  const target=getData("waterTarget",2000);
+  const amount=getData(waterKey(),0);
+  document.getElementById("waterCount").textContent=amount+" ml / "+target+" ml";
+  document.getElementById("waterProgress").style.width=
+    Math.min(100,amount/target*100)+"%";
+}
+function addWater(amount){
+  const total=getData(waterKey(),0)+amount;
+  saveData(waterKey(),total);
+  updateWater();
+}
+function resetWater(){
+  saveData(waterKey(),0);
+  updateWater();
+}
+
+// ---------- ACTIVITY TRACKER ----------
+function saveActivity(){
+  const minutes=Number(document.getElementById("activityMinutes").value);
+  if(!Number.isInteger(minutes)||minutes<0||minutes>1440){
+    alert(tr("Enter a valid number of minutes."));
+    return;
+  }
+  saveData("activity_"+todayKey(),minutes);
+  document.getElementById("activityResult").textContent=
+    tr("Today's activity: ")+minutes+" minutes.";
+}
+function loadActivity(){
+  const m=getData("activity_"+todayKey(),0);
+  document.getElementById("activityMinutes").value=m;
+  document.getElementById("activityResult").textContent=
+    tr("Today's activity: ")+m+" minutes.";
+}
+
+// ---------- WEEKLY PLANNERS ----------
+const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const diet=[
+  "Oats, fruit | Rice, vegetables and fish | Soup and salad",
+  "Egg and toast | Chicken and vegetables | Lentils and rice",
+  "Yogurt and fruit | Rice and beans | Grilled fish",
+  "Milk and oats | Vegetable khichuri | Chicken and salad",
+  "Eggs and fruit | Fish and rice | Vegetable soup",
+  "Whole-grain bread | Chicken and vegetables | Lentils",
+  "Fruit and yogurt | Balanced home meal | Light dinner"
+];
+const exercise=[
+  "30-minute walk",
+  "Light strength training",
+  "30-minute cycling",
+  "Stretching and walking",
+  "Strength training",
+  "Swimming or outdoor activity",
+  "Rest and gentle stretching"
+];
+function renderPlans(){
+  document.getElementById("dietPlan").innerHTML=days.map((d,i)=>
+    "<p><b>"+d+":</b><br>"+diet[i]+"</p>").join("");
+  document.getElementById("exercisePlan").innerHTML=days.map((d,i)=>
+    "<p><b>"+d+":</b><br>"+exercise[i]+"</p>").join("");
+}
+
+// ---------- EXPANDED FOOD SEARCH & NUTRITION DATABASE ----------
+// Approximate nutrition values per 100 g. Values vary with variety and preparation.
+const foods=[{"name":"Apple","category":"Fruits","calories":52,"protein":0.3,"carbs":14,"fat":0.2,"fiber":2.4,"info":"Vitamin C and fibre","image":"https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=600&q=80"},{"name":"Banana","category":"Fruits","calories":89,"protein":1.1,"carbs":22.8,"fat":0.3,"fiber":2.6,"info":"Potassium and vitamin B6","image":"https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=600&q=80"},{"name":"Orange","category":"Fruits","calories":47,"protein":0.9,"carbs":11.8,"fat":0.1,"fiber":2.4,"info":"Vitamin C","image":"https://images.unsplash.com/photo-1547514701-42782101795e?auto=format&fit=crop&w=600&q=80"},{"name":"Mango","category":"Fruits","calories":60,"protein":0.8,"carbs":15,"fat":0.4,"fiber":1.6,"info":"Vitamin A and vitamin C","image":"https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=600&q=80"},{"name":"Papaya","category":"Fruits","calories":43,"protein":0.5,"carbs":10.8,"fat":0.3,"fiber":1.7,"info":"Vitamin C and carotenoids","image":"https://images.unsplash.com/photo-1517282009859-f000ec3b26fe?auto=format&fit=crop&w=600&q=80"},{"name":"Guava","category":"Fruits","calories":68,"protein":2.6,"carbs":14.3,"fat":1,"fiber":5.4,"info":"Vitamin C and fibre","image":"https://images.unsplash.com/photo-1536511132770-e5058c6e8c46?auto=format&fit=crop&w=600&q=80"},{"name":"Pineapple","category":"Fruits","calories":50,"protein":0.5,"carbs":13.1,"fat":0.1,"fiber":1.4,"info":"Vitamin C and manganese","image":"https://images.unsplash.com/photo-1550258987-190a2d41a8ba?auto=format&fit=crop&w=600&q=80"},{"name":"Watermelon","category":"Fruits","calories":30,"protein":0.6,"carbs":7.6,"fat":0.2,"fiber":0.4,"info":"Water and lycopene","image":"https://images.unsplash.com/photo-1563114773-84221bd62daa?auto=format&fit=crop&w=600&q=80"},{"name":"Dragon Fruit","category":"Fruits","calories":57,"protein":1.2,"carbs":13,"fat":0.1,"fiber":3.1,"info":"Fibre and vitamin C","image":""},{"name":"Avocado","category":"Fruits","calories":160,"protein":2,"carbs":8.5,"fat":14.7,"fiber":6.7,"info":"Monounsaturated fats","image":"https://images.unsplash.com/photo-1523048362872-9f3b6c5d0a9e?auto=format&fit=crop&w=600&q=80"},{"name":"Strawberry","category":"Fruits","calories":32,"protein":0.7,"carbs":7.7,"fat":0.3,"fiber":2,"info":"Vitamin C and antioxidants","image":"https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&w=600&q=80"},{"name":"Blueberry","category":"Fruits","calories":57,"protein":0.7,"carbs":14.5,"fat":0.3,"fiber":2.4,"info":"Antioxidants","image":"https://images.unsplash.com/photo-1498557850523-fd3d118b962e?auto=format&fit=crop&w=600&q=80"},{"name":"Grapes","category":"Fruits","calories":69,"protein":0.7,"carbs":18.1,"fat":0.2,"fiber":0.9,"info":"Plant antioxidants","image":"https://images.unsplash.com/photo-1537640538966-79f369143f8f?auto=format&fit=crop&w=600&q=80"},{"name":"Pomegranate","category":"Fruits","calories":83,"protein":1.7,"carbs":18.7,"fat":1.2,"fiber":4,"info":"Polyphenols and fibre","image":"https://images.unsplash.com/photo-1541344999736-83eca272f6fc?auto=format&fit=crop&w=600&q=80"},{"name":"Pear","category":"Fruits","calories":57,"protein":0.4,"carbs":15.2,"fat":0.1,"fiber":3.1,"info":"Fibre","image":"https://images.unsplash.com/photo-1514756331096-242fdeb70d4a?auto=format&fit=crop&w=600&q=80"},{"name":"Broccoli","category":"Vegetables","calories":34,"protein":2.8,"carbs":6.6,"fat":0.4,"fiber":2.6,"info":"Vitamin C and K","image":"https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?auto=format&fit=crop&w=600&q=80"},{"name":"Spinach","category":"Vegetables","calories":23,"protein":2.9,"carbs":3.6,"fat":0.4,"fiber":2.2,"info":"Folate and vitamin K","image":"https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=600&q=80"},{"name":"Carrot","category":"Vegetables","calories":41,"protein":0.9,"carbs":9.6,"fat":0.2,"fiber":2.8,"info":"Beta-carotene","image":"https://images.unsplash.com/photo-1445282768818-728615cc910a?auto=format&fit=crop&w=600&q=80"},{"name":"Tomato","category":"Vegetables","calories":18,"protein":0.9,"carbs":3.9,"fat":0.2,"fiber":1.2,"info":"Lycopene and vitamin C","image":"https://images.unsplash.com/photo-1546094096-0df4bcaaa337?auto=format&fit=crop&w=600&q=80"},{"name":"Cucumber","category":"Vegetables","calories":15,"protein":0.7,"carbs":3.6,"fat":0.1,"fiber":0.5,"info":"Hydration","image":"https://images.unsplash.com/photo-1604977042946-1eecc30f269e?auto=format&fit=crop&w=600&q=80"},{"name":"Cauliflower","category":"Vegetables","calories":25,"protein":1.9,"carbs":5,"fat":0.3,"fiber":2,"info":"Vitamin C","image":"https://images.unsplash.com/photo-1568584711075-3d021a7c3ca3?auto=format&fit=crop&w=600&q=80"},{"name":"Capsicum","category":"Vegetables","calories":31,"protein":1,"carbs":6,"fat":0.3,"fiber":2.1,"info":"Vitamin C","image":"https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?auto=format&fit=crop&w=600&q=80"},{"name":"Sweet Potato","category":"Vegetables","calories":86,"protein":1.6,"carbs":20.1,"fat":0.1,"fiber":3,"info":"Beta-carotene and fibre","image":"https://images.unsplash.com/photo-1596097635121-14b63b7a0c19?auto=format&fit=crop&w=600&q=80"},{"name":"Pumpkin","category":"Vegetables","calories":26,"protein":1,"carbs":6.5,"fat":0.1,"fiber":0.5,"info":"Vitamin A","image":"https://images.unsplash.com/photo-1509622905150-fa66d3906e09?auto=format&fit=crop&w=600&q=80"},{"name":"Cabbage","category":"Vegetables","calories":25,"protein":1.3,"carbs":5.8,"fat":0.1,"fiber":2.5,"info":"Vitamin C and K","image":"https://images.unsplash.com/photo-1559181567-c3190ca9959b?auto=format&fit=crop&w=600&q=80"},{"name":"Beetroot","category":"Vegetables","calories":43,"protein":1.6,"carbs":9.6,"fat":0.2,"fiber":2.8,"info":"Folate","image":"https://images.unsplash.com/photo-1570197788417-0e82375c9371?auto=format&fit=crop&w=600&q=80"},{"name":"Egg","category":"Protein","calories":155,"protein":13,"carbs":1.1,"fat":11,"fiber":0,"info":"Complete protein and choline","image":"https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=600&q=80"},{"name":"Chicken Breast","category":"Protein","calories":165,"protein":31,"carbs":0,"fat":3.6,"fiber":0,"info":"Lean protein","image":"https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=600&q=80"},{"name":"Salmon","category":"Protein","calories":208,"protein":20.4,"carbs":0,"fat":13.4,"fiber":0,"info":"Omega-3 fats","image":"https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=600&q=80"},{"name":"Tuna","category":"Protein","calories":132,"protein":28,"carbs":0,"fat":1,"fiber":0,"info":"Protein and selenium","image":"https://images.unsplash.com/photo-1544943910-4c1dc44aab44?auto=format&fit=crop&w=600&q=80"},{"name":"Sardines","category":"Protein","calories":208,"protein":24.6,"carbs":0,"fat":11.5,"fiber":0,"info":"Omega-3 and calcium","image":"https://images.unsplash.com/photo-1510130387422-82bed34b37e9?auto=format&fit=crop&w=600&q=80"},{"name":"Lean Beef","category":"Protein","calories":217,"protein":26,"carbs":0,"fat":12,"fiber":0,"info":"Protein, iron and zinc","image":"https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?auto=format&fit=crop&w=600&q=80"},{"name":"Turkey Breast","category":"Protein","calories":135,"protein":30,"carbs":0,"fat":1,"fiber":0,"info":"Lean protein","image":"https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=600&q=80"},{"name":"Tofu","category":"Protein","calories":76,"protein":8,"carbs":1.9,"fat":4.8,"fiber":0.3,"info":"Plant protein and calcium","image":"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80"},{"name":"Milk","category":"Dairy","calories":61,"protein":3.2,"carbs":4.8,"fat":3.3,"fiber":0,"info":"Calcium and protein","image":"https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=600&q=80"},{"name":"Plain Yogurt","category":"Dairy","calories":61,"protein":3.5,"carbs":4.7,"fat":3.3,"fiber":0,"info":"Calcium and live cultures","image":"https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=80"},{"name":"Greek Yogurt","category":"Dairy","calories":97,"protein":9,"carbs":3.9,"fat":5,"fiber":0,"info":"Higher protein","image":"https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=600&q=80"},{"name":"Cottage Cheese","category":"Dairy","calories":98,"protein":11.1,"carbs":3.4,"fat":4.3,"fiber":0,"info":"Protein and calcium","image":"https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=600&q=80"},{"name":"Cheddar Cheese","category":"Dairy","calories":403,"protein":25,"carbs":1.3,"fat":33,"fiber":0,"info":"Calcium and protein","image":"https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&w=600&q=80"},{"name":"Oats","category":"Grains","calories":389,"protein":16.9,"carbs":66.3,"fat":6.9,"fiber":10.6,"info":"Beta-glucan fibre","image":"https://images.unsplash.com/photo-1517673132405-a56a62b18caf?auto=format&fit=crop&w=600&q=80"},{"name":"Brown Rice","category":"Grains","calories":123,"protein":2.7,"carbs":25.6,"fat":1,"fiber":1.8,"info":"Whole-grain carbohydrates","image":"https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?auto=format&fit=crop&w=600&q=80"},{"name":"Quinoa","category":"Grains","calories":120,"protein":4.4,"carbs":21.3,"fat":1.9,"fiber":2.8,"info":"Protein and magnesium","image":"https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80"},{"name":"Whole Wheat Bread","category":"Grains","calories":247,"protein":13,"carbs":41,"fat":4.2,"fiber":7,"info":"Fibre","image":"https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80"},{"name":"Barley","category":"Grains","calories":354,"protein":12.5,"carbs":73.5,"fat":2.3,"fiber":17.3,"info":"Soluble fibre","image":"https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=600&q=80"},{"name":"Millet","category":"Grains","calories":119,"protein":3.5,"carbs":23.7,"fat":1,"fiber":1.3,"info":"Magnesium","image":"https://images.unsplash.com/photo-1517673132405-a56a62b18caf?auto=format&fit=crop&w=600&q=80"},{"name":"Almonds","category":"Nuts & Seeds","calories":579,"protein":21.2,"carbs":21.6,"fat":49.9,"fiber":12.5,"info":"Vitamin E and healthy fats","image":"https://images.unsplash.com/photo-1508061253366-f7da158b6d46?auto=format&fit=crop&w=600&q=80"},{"name":"Walnuts","category":"Nuts & Seeds","calories":654,"protein":15.2,"carbs":13.7,"fat":65.2,"fiber":6.7,"info":"Plant omega-3 fats","image":"https://images.unsplash.com/photo-1563412885-139e4045eb4c?auto=format&fit=crop&w=600&q=80"},{"name":"Chia Seeds","category":"Nuts & Seeds","calories":486,"protein":16.5,"carbs":42.1,"fat":30.7,"fiber":34.4,"info":"Fibre and omega-3","image":"https://images.unsplash.com/photo-1515543904379-3d757afe72e4?auto=format&fit=crop&w=600&q=80"},{"name":"Flax Seeds","category":"Nuts & Seeds","calories":534,"protein":18.3,"carbs":28.9,"fat":42.2,"fiber":27.3,"info":"Fibre and omega-3","image":"https://images.unsplash.com/photo-1515543904379-3d757afe72e4?auto=format&fit=crop&w=600&q=80"},{"name":"Pumpkin Seeds","category":"Nuts & Seeds","calories":559,"protein":30.2,"carbs":10.7,"fat":49.1,"fiber":6,"info":"Magnesium and zinc","image":"https://images.unsplash.com/photo-1574570173584-7e9a8a7e3c57?auto=format&fit=crop&w=600&q=80"},{"name":"Peanuts","category":"Nuts & Seeds","calories":567,"protein":25.8,"carbs":16.1,"fat":49.2,"fiber":8.5,"info":"Protein and healthy fats","image":"https://images.unsplash.com/photo-1567892737950-30c4db37cd89?auto=format&fit=crop&w=600&q=80"},{"name":"Lentils","category":"Legumes","calories":116,"protein":9,"carbs":20.1,"fat":0.4,"fiber":7.9,"info":"Plant protein and iron","image":"https://images.unsplash.com/photo-1515543904379-3d757afe72e4?auto=format&fit=crop&w=600&q=80"},{"name":"Chickpeas","category":"Legumes","calories":164,"protein":8.9,"carbs":27.4,"fat":2.6,"fiber":7.6,"info":"Fibre and plant protein","image":"https://images.unsplash.com/photo-1515543904379-3d757afe72e4?auto=format&fit=crop&w=600&q=80"},{"name":"Kidney Beans","category":"Legumes","calories":127,"protein":8.7,"carbs":22.8,"fat":0.5,"fiber":6.4,"info":"Plant protein and fibre","image":"https://images.unsplash.com/photo-1551462147-ff29053bfc14?auto=format&fit=crop&w=600&q=80"},{"name":"Black Beans","category":"Legumes","calories":132,"protein":8.9,"carbs":23.7,"fat":0.5,"fiber":8.7,"info":"Fibre and folate","image":"https://images.unsplash.com/photo-1551462147-ff29053bfc14?auto=format&fit=crop&w=600&q=80"},{"name":"Green Peas","category":"Legumes","calories":81,"protein":5.4,"carbs":14.5,"fat":0.4,"fiber":5.7,"info":"Plant protein and fibre","image":"https://images.unsplash.com/photo-1587735243615-c03f25aaff15?auto=format&fit=crop&w=600&q=80"},{"name":"Soybeans","category":"Legumes","calories":173,"protein":16.6,"carbs":9.9,"fat":9,"fiber":6,"info":"Complete plant protein","image":"https://images.unsplash.com/photo-1599940824399-b87987ceb72a?auto=format&fit=crop&w=600&q=80"},{"name":"Edamame","category":"Legumes","calories":121,"protein":11.9,"carbs":8.9,"fat":5.2,"fiber":5.2,"info":"Plant protein and folate","image":"https://images.unsplash.com/photo-1599940824399-b87987ceb72a?auto=format&fit=crop&w=600&q=80"}];
+
+let selectedFoodCategory="All";
+
+const FOOD_LABELS={
+  bn:{"Apple":"আপেল","Banana":"কলা","Orange":"কমলা","Mango":"আম","Papaya":"পেঁপে","Guava":"পেয়ারা","Pineapple":"আনারস","Watermelon":"তরমুজ","Avocado":"অ্যাভোকাডো","Strawberry":"স্ট্রবেরি","Blueberry":"ব্লুবেরি","Grapes":"আঙুর","Pomegranate":"ডালিম","Pear":"নাশপাতি","Dragon Fruit":"ড্রাগন ফল","Broccoli":"ব্রকলি","Spinach":"পালং শাক","Carrot":"গাজর","Tomato":"টমেটো","Cucumber":"শসা","Cauliflower":"ফুলকপি","Capsicum":"ক্যাপসিকাম","Sweet Potato":"মিষ্টি আলু","Pumpkin":"কুমড়া","Cabbage":"বাঁধাকপি","Beetroot":"বিট","Egg":"ডিম","Chicken Breast":"মুরগির বুকের মাংস","Salmon":"স্যালমন মাছ","Tuna":"টুনা মাছ","Sardines":"সার্ডিন মাছ","Lean Beef":"চর্বিহীন গরুর মাংস","Turkey Breast":"টার্কির বুকের মাংস","Tofu":"টোফু","Milk":"দুধ","Plain Yogurt":"সাধারণ দই","Greek Yogurt":"গ্রিক দই","Cottage Cheese":"কটেজ চিজ","Cheddar Cheese":"চেডার চিজ","Oats":"ওটস","Brown Rice":"লাল চাল","Quinoa":"কুইনোয়া","Whole Wheat Bread":"আটা রুটি","Barley":"যব","Millet":"বাজরা","Almonds":"কাঠবাদাম","Walnuts":"আখরোট","Chia Seeds":"চিয়া বীজ","Flax Seeds":"তিসি বীজ","Pumpkin Seeds":"কুমড়ার বীজ","Peanuts":"চিনাবাদাম","Lentils":"মসুর ডাল","Chickpeas":"ছোলা","Kidney Beans":"রাজমা","Black Beans":"কালো শিম","Green Peas":"মটরশুঁটি","Soybeans":"সয়াবিন","Edamame":"এডামামে"},
+  hi:{"Apple":"सेब","Banana":"केला","Orange":"संतरा","Mango":"आम","Papaya":"पपीता","Guava":"अमरूद","Pineapple":"अनानास","Watermelon":"तरबूज","Avocado":"एवोकाडो","Strawberry":"स्ट्रॉबेरी","Blueberry":"ब्लूबेरी","Grapes":"अंगूर","Pomegranate":"अनार","Pear":"नाशपाती","Dragon Fruit":"ड्रैगन फ्रूट","Broccoli":"ब्रोकली","Spinach":"पालक","Carrot":"गाजर","Tomato":"टमाटर","Cucumber":"खीरा","Cauliflower":"फूलगोभी","Capsicum":"शिमला मिर्च","Sweet Potato":"शकरकंद","Pumpkin":"कद्दू","Cabbage":"पत्तागोभी","Beetroot":"चुकंदर","Egg":"अंडा","Chicken Breast":"चिकन ब्रेस्ट","Salmon":"सैल्मन मछली","Tuna":"टूना मछली","Sardines":"सार्डिन मछली","Lean Beef":"लीन बीफ़","Turkey Breast":"टर्की ब्रेस्ट","Tofu":"टोफू","Milk":"दूध","Plain Yogurt":"सादा दही","Greek Yogurt":"ग्रीक योगर्ट","Cottage Cheese":"कॉटेज चीज़","Cheddar Cheese":"चेडर चीज़","Oats":"ओट्स","Brown Rice":"ब्राउन राइस","Quinoa":"क्विनोआ","Whole Wheat Bread":"गेहूँ की ब्रेड","Barley":"जौ","Millet":"बाजरा","Almonds":"बादाम","Walnuts":"अखरोट","Chia Seeds":"चिया बीज","Flax Seeds":"अलसी के बीज","Pumpkin Seeds":"कद्दू के बीज","Peanuts":"मूँगफली","Lentils":"दाल","Chickpeas":"चना","Kidney Beans":"राजमा","Black Beans":"काले बीन्स","Green Peas":"हरी मटर","Soybeans":"सोयाबीन","Edamame":"एडामामे"}
+};
+const FOOD_EMOJI={
+  "Apple":"🍎","Banana":"🍌","Orange":"🍊","Mango":"🥭","Papaya":"🍈","Guava":"🍐","Pineapple":"🍍","Watermelon":"🍉","Avocado":"🥑","Strawberry":"🍓","Blueberry":"🫐","Grapes":"🍇","Pomegranate":"🍎","Pear":"🍐","Dragon Fruit":"🐉",
+  "Broccoli":"🥦","Spinach":"🥬","Carrot":"🥕","Tomato":"🍅","Cucumber":"🥒","Cauliflower":"🥦","Capsicum":"🫑","Sweet Potato":"🍠","Pumpkin":"🎃","Cabbage":"🥬","Beetroot":"🫜",
+  "Egg":"🥚","Chicken Breast":"🍗","Salmon":"🐟","Tuna":"🐟","Sardines":"🐟","Lean Beef":"🥩","Turkey Breast":"🍗","Tofu":"🧈","Milk":"🥛","Plain Yogurt":"🥣","Greek Yogurt":"🥣","Cottage Cheese":"🧀","Cheddar Cheese":"🧀",
+  "Oats":"🥣","Brown Rice":"🍚","Quinoa":"🥣","Whole Wheat Bread":"🍞","Barley":"🌾","Millet":"🌾","Almonds":"🌰","Walnuts":"🌰","Chia Seeds":"🌱","Flax Seeds":"🌱","Pumpkin Seeds":"🎃","Peanuts":"🥜","Lentils":"🫘","Chickpeas":"🫘","Kidney Beans":"🫘","Black Beans":"🫘","Green Peas":"🫛","Soybeans":"🫘","Edamame":"🫛"
+};
+const FOOD_CATEGORY_EMOJI={"Fruits":"🍎","Vegetables":"🥦","Protein":"🥚","Dairy":"🥛","Grains":"🌾","Nuts & Seeds":"🥜","Legumes":"🫘"};
+function foodName(food){return (FOOD_LABELS[currentLanguage]||{})[food.name]||food.name;}
+function foodCategory(category){return tr(category);}
+const FOOD_VECTOR_ART={
+  "Blueberry":`<g fill="#3156a6" stroke="#203f82" stroke-width="4"><circle cx="245" cy="145" r="43"/><circle cx="330" cy="130" r="48"/><circle cx="375" cy="195" r="42"/><circle cx="270" cy="225" r="46"/><circle cx="185" cy="205" r="37"/></g><g fill="#9bb8f4"><circle cx="230" cy="130" r="10"/><circle cx="315" cy="112" r="11"/><circle cx="360" cy="180" r="9"/><circle cx="255" cy="210" r="10"/></g><g fill="none" stroke="#dbeafe" stroke-width="5" stroke-linecap="round"><path d="M235 105l10 8-10 8-10-8z"/><path d="M330 88l10 8-10 8-10-8z"/><path d="M375 155l9 8-9 8-9-8z"/></g>`,
+  "Capsicum":`<path d="M300 105C260 55 190 85 190 160c0 85 52 130 110 130s110-45 110-130c0-75-70-105-110-55z" fill="#e34d43" stroke="#a8322b" stroke-width="7"/><path d="M300 105c-22-28-22-48-8-66 16 18 22 34 8 66z" fill="#39834b" stroke="#24613a" stroke-width="5"/><path d="M300 112c-38 22-52 82-38 144M300 112c38 22 52 82 38 144" fill="none" stroke="#f58b7e" stroke-width="8" stroke-linecap="round"/>`,
+  "Beetroot":`<path d="M300 145c-85-8-130 55-95 122 22 42 63 57 95 82 32-25 73-40 95-82 35-67-10-130-95-122z" fill="#a51d52" stroke="#74143b" stroke-width="7"/><path d="M300 150c-12-48-54-66-82-53 4 35 34 60 82 64M300 150c12-48 54-66 82-53-4 35-34 60-82 64M300 148c-2-55 24-83 53-88 12 35-5 71-53 88" fill="#4d9b55" stroke="#34763e" stroke-width="6"/><path d="M300 290v40" stroke="#74143b" stroke-width="6" stroke-linecap="round"/>`,
+  "Lentils":`<path d="M145 205h310c-8 86-63 125-155 125s-147-39-155-125z" fill="#e7eef7" stroke="#718096" stroke-width="8"/><path d="M165 205c20-65 77-92 135-92s115 27 135 92z" fill="#b77936" stroke="#8c5524" stroke-width="6"/><g fill="#e7b65c" stroke="#a86f2b" stroke-width="3"><ellipse cx="205" cy="174" rx="22" ry="13"/><ellipse cx="258" cy="145" rx="22" ry="13"/><ellipse cx="310" cy="178" rx="22" ry="13"/><ellipse cx="360" cy="150" rx="22" ry="13"/><ellipse cx="397" cy="184" rx="20" ry="12"/><ellipse cx="250" cy="190" rx="20" ry="12"/><ellipse cx="340" cy="194" rx="20" ry="12"/></g>`,
+  "Chickpeas":`<g fill="#d9b36c" stroke="#a98243" stroke-width="5"><path d="M190 170c-25-30 10-65 43-43 28-28 68-4 58 30 34 10 30 55-5 62-15 35-61 30-72 0-35 4-48-28-24-49z"/><path d="M310 130c-25-30 10-65 43-43 28-28 68-4 58 30 34 10 30 55-5 62-15 35-61 30-72 0-35 4-48-28-24-49z"/><path d="M275 230c-25-30 10-65 43-43 28-28 68-4 58 30 34 10 30 55-5 62-15 35-61 30-72 0-35 4-48-28-24-49z"/></g><g fill="#f3d9a5"><circle cx="224" cy="156" r="8"/><circle cx="344" cy="116" r="8"/><circle cx="309" cy="216" r="8"/></g>`,
+  "Kidney Beans":`<g fill="#9c3f36" stroke="#682820" stroke-width="6"><path d="M190 135c-30 25-22 82 18 112 35 26 80 8 90-23 8-25-12-42-35-37-35 8-43-18-28-40 15-22-14-34-45-12z"/><path d="M315 115c-30 25-22 82 18 112 35 26 80 8 90-23 8-25-12-42-35-37-35 8-43-18-28-40 15-22-14-34-45-12z"/><path d="M255 225c-30 25-22 82 18 112 35 26 80 8 90-23 8-25-12-42-35-37-35 8-43-18-28-40 15-22-14-34-45-12z"/></g>`,
+  "Black Beans":`<g fill="#252b36" stroke="#10151e" stroke-width="6"><ellipse cx="210" cy="155" rx="48" ry="35" transform="rotate(-25 210 155)"/><ellipse cx="310" cy="130" rx="48" ry="35" transform="rotate(18 310 130)"/><ellipse cx="390" cy="190" rx="48" ry="35" transform="rotate(-15 390 190)"/><ellipse cx="260" cy="235" rx="48" ry="35" transform="rotate(22 260 235)"/><ellipse cx="355" cy="270" rx="43" ry="31" transform="rotate(-20 355 270)"/></g><g fill="#727b8b"><circle cx="210" cy="155" r="7"/><circle cx="310" cy="130" r="7"/><circle cx="390" cy="190" r="7"/><circle cx="260" cy="235" r="7"/><circle cx="355" cy="270" r="7"/></g>`,
+  "Green Peas":`<path d="M145 220c45-105 220-160 315-75-45 112-220 167-315 75z" fill="#4f9b50" stroke="#2f7137" stroke-width="8"/><g fill="#a9d96c" stroke="#4e913e" stroke-width="5"><circle cx="215" cy="190" r="31"/><circle cx="275" cy="164" r="31"/><circle cx="337" cy="145" r="31"/><circle cx="395" cy="151" r="29"/></g><path d="M145 220c-18 18-35 25-54 22" fill="none" stroke="#2f7137" stroke-width="8" stroke-linecap="round"/>`,
+  "Soybeans":`<path d="M160 215c35-92 165-145 280-70 15 10 20 25 10 38-63 82-190 119-278 66-18-11-22-20-12-34z" fill="#75a94d" stroke="#477d38" stroke-width="7"/><g fill="#e5d3a0" stroke="#b5a16d" stroke-width="4"><ellipse cx="225" cy="195" rx="28" ry="23" transform="rotate(-20 225 195)"/><ellipse cx="290" cy="171" rx="28" ry="23" transform="rotate(-12 290 171)"/><ellipse cx="355" cy="163" rx="28" ry="23" transform="rotate(8 355 163)"/></g>`,
+  "Edamame":`<path d="M145 215c35-95 180-150 310-65 15 10 18 25 8 39-70 84-205 118-300 60-18-11-24-20-18-34z" fill="#55a94e" stroke="#2f7739" stroke-width="8"/><g fill="#b9df75" stroke="#4d963f" stroke-width="5"><ellipse cx="220" cy="194" rx="30" ry="25" transform="rotate(-20 220 194)"/><ellipse cx="290" cy="170" rx="30" ry="25" transform="rotate(-12 290 170)"/><ellipse cx="360" cy="163" rx="30" ry="25" transform="rotate(8 360 163)"/></g>`
+};
+function foodIllustration(food){
+  const title=foodName(food).replace(/[&<>"']/g,"");
+  const art=FOOD_VECTOR_ART[food.name];
+  const picture=art||`<circle cx="300" cy="150" r="105" fill="#fff" opacity=".8"/><text x="300" y="195" font-size="135" text-anchor="middle" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${FOOD_EMOJI[food.name]||"🥗"}</text>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="360" viewBox="0 0 600 360"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dcfce7"/><stop offset="1" stop-color="#dbeafe"/></linearGradient><filter id="s"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-opacity=".12"/></filter></defs><rect width="600" height="360" rx="28" fill="url(#g)"/><g filter="url(#s)">${picture}</g><text x="300" y="330" font-size="30" font-weight="700" text-anchor="middle" fill="#164e63" font-family="Arial,sans-serif">${title}</text></svg>`;
+  return "data:image/svg+xml;charset=UTF-8,"+encodeURIComponent(svg);
+}
+function filterFoodCategory(category){
+  selectedFoodCategory=category;
+  document.querySelectorAll(".food-filter").forEach(button=>button.classList.toggle("active",button.dataset.category===category));
+  searchFood();
+}
+function searchFood(){
+  const q=document.getElementById("foodSearch").value.trim().toLowerCase();
+  const sort=document.getElementById("foodSort").value;
+  let matches=foods.filter(food=>{
+    const translatedName=foodName(food).toLowerCase();
+    const matchesText=food.name.toLowerCase().includes(q)||translatedName.includes(q)||food.category.toLowerCase().includes(q)||food.info.toLowerCase().includes(q);
+    return matchesText&&(selectedFoodCategory==="All"||food.category===selectedFoodCategory);
+  });
+  if(sort==="calories-low")matches.sort((a,b)=>a.calories-b.calories);
+  else if(sort==="calories-high")matches.sort((a,b)=>b.calories-a.calories);
+  else if(sort==="protein-high")matches.sort((a,b)=>b.protein-a.protein);
+  else if(sort==="fiber-high")matches.sort((a,b)=>b.fiber-a.fiber);
+  document.getElementById("foodCount").textContent=tr("Showing")+" "+matches.length+" "+tr("of")+" "+foods.length+" "+tr("healthy foods");
+  document.getElementById("foodResults").innerHTML=matches.length?matches.map(food=>`
+    <article class="food-card">
+      <img class="food-illustration" src="${foodIllustration(food)}" alt="${foodName(food)} illustration" loading="lazy">
+      <div class="food-card-content">
+        <h3>${foodName(food)}</h3>
+        <span class="food-category">${foodCategory(food.category)}</span>
+        <div class="food-calories">${food.calories} kcal</div>
+        <small class="muted">${tr("Calories per 100 g")}</small>
+        <p class="small">${food.info}</p>
+        <div class="food-nutrients">
+          <span>🥩 ${tr("Protein")}: <b>${food.protein} g</b></span>
+          <span>🍞 ${tr("Carbs")}: <b>${food.carbs} g</b></span>
+          <span>🥑 ${tr("Fat")}: <b>${food.fat} g</b></span>
+          <span>🌿 ${tr("Fiber")}: <b>${food.fiber} g</b></span>
+        </div>
+      </div>
+    </article>`).join(""):`<p class="muted">${tr("No matching food found. Try another name or category.")}</p>`;
+  applyTranslations(document.getElementById("foodResults"));
+}
+
+
+// ---------- GOALS ----------
+function saveGoal(){
+  const goal=Number(document.getElementById("goalWeight").value);
+  if(!goal||goal<20||goal>300){
+    alert(tr("Enter a valid target weight."));
+    return;
+  }
+  saveData("targetWeight",goal);
+  document.getElementById("goalMessage").textContent=tr("Target weight saved: ")+goal+" kg";
+}
+function saveDailyGoals(){
+  const goals={
+    water:document.getElementById("goalWater").checked,
+    exercise:document.getElementById("goalExercise").checked,
+    sleep:document.getElementById("goalSleep").checked
+  };
+  saveData("dailyGoals_"+todayKey(),goals);
+  const completed=Object.values(goals).filter(Boolean).length;
+  document.getElementById("achievementMessage").textContent=
+    tr("You completed ")+completed+tr(" out of 3 daily goals. Keep going!");
+}
+function loadGoals(){
+  const goal=getData("targetWeight","");
+  document.getElementById("goalWeight").value=goal;
+  const g=getData("dailyGoals_"+todayKey(),{});
+  document.getElementById("goalWater").checked=!!g.water;
+  document.getElementById("goalExercise").checked=!!g.exercise;
+  document.getElementById("goalSleep").checked=!!g.sleep;
+}
+
+// ---------- BMI HISTORY AND CHART ----------
+function saveBMIHistory(bmi){
+  const history=getData("bmiHistory",[]);
+  history.push({
+    bmi:bmi,
+    date:new Date().toLocaleDateString()
+  });
+  if(history.length>30)history.shift();
+  saveData("bmiHistory",history);
+}
+function drawChart(){
+  const history=getData("bmiHistory",[]);
+  const canvas=document.getElementById("historyChart");
+  const ctx=canvas.getContext("2d");
+  const w=canvas.width,h=canvas.height;
+  ctx.clearRect(0,0,w,h);
+  if(!history.length){
+    ctx.fillText(tr("Your BMI history will appear here."),20,40);
+    return;
+  }
+  const values=history.map(x=>x.bmi);
+  const min=Math.min(10,...values)-2;
+  const max=Math.max(40,...values)+2;
+  const xStep=history.length>1?(w-70)/(history.length-1):0;
+  ctx.font="12px Arial";
+  ctx.strokeStyle="#94a3b8";
+  ctx.beginPath();ctx.moveTo(45,15);ctx.lineTo(45,h-35);ctx.lineTo(w-10,h-35);ctx.stroke();
+  ctx.strokeStyle="#0284c7";ctx.lineWidth=3;ctx.beginPath();
+  values.forEach((v,i)=>{
+    const x=45+i*xStep;
+    const y=h-35-((v-min)/(max-min))*(h-60);
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  values.forEach((v,i)=>{
+    const x=45+i*xStep;
+    const y=h-35-((v-min)/(max-min))*(h-60);
+    ctx.fillStyle="#0284c7";ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();
+  });
+  ctx.fillStyle=getComputedStyle(document.body).color;
+  ctx.fillText("BMI",8,20);
+}
+function showHistory(){
+  const history=getData("bmiHistory",[]);
+  document.getElementById("historyList").innerHTML=history.length?
+    "<table><tr><th>Date</th><th>BMI</th></tr>"+
+    history.slice().reverse().map(x=>"<tr><td>"+x.date+"</td><td>"+x.bmi+"</td></tr>").join("")+
+    "</table>":"<p>No BMI records yet.</p>";
+}
+function clearHistory(){
+  if(confirm("Delete all BMI history?")){
+    localStorage.removeItem("bmiHistory");
+    drawChart();showHistory();
+  }
+}
+
+// ---------- DAILY TIP AND QUOTE ----------
+const tips=[
+  "Drink water regularly throughout the day.",
+  "Include fruits and vegetables in your meals.",
+  "Take short movement breaks during long sitting periods.",
+  "Try to maintain a regular sleep schedule.",
+  "Choose balanced meals and avoid extreme diets.",
+  "Regular physical activity supports overall health."
+];
+const quotes=[
+  "Small steps every day lead to big changes.",
+  "Your health is your greatest wealth.",
+  "Consistency is more important than perfection.",
+  "Take care of your body. It is the place you live.",
+  "Progress, not perfection!"
+];
+function dailyContent(){
+  const day=Math.floor(Date.now()/86400000);
+  document.getElementById("dailyTip").textContent=tips[day%tips.length];
+  document.getElementById("quote").textContent='"'+quotes[day%quotes.length]+'"';
+}
+
+// ---------- REMINDER ----------
+function setReminder(){
+  const time=document.getElementById("reminderTime").value;
+  const message=document.getElementById("reminderMessage").value;
+  if(!time){alert(tr("Please select a reminder time."));return;}
+  saveData("bmiReminder",{time,message});
+  scheduleReminder();
+}
+function scheduleReminder(){
+  const r=getData("bmiReminder",null);
+  if(!r)return;
+  if(reminderTimer)clearTimeout(reminderTimer);
+  document.getElementById("reminderTime").value=r.time;
+  document.getElementById("reminderMessage").value=r.message;
+  document.getElementById("reminderStatus").textContent=
+    tr("Reminder saved for ")+r.time+". "+tr("Keep this page open to receive it.");
+  const [hour,minute]=r.time.split(":").map(Number);
+  const now=new Date();
+  const next=new Date();
+  next.setHours(hour,minute,0,0);
+  if(next<=now)next.setDate(next.getDate()+1);
+  const delay=next-now;
+  reminderTimer=setTimeout(()=>{
+    alert(tr(r.message));
+    scheduleReminder();
+  },delay);
+}
+function clearReminder(){
+  localStorage.removeItem("bmiReminder");
+  if(reminderTimer)clearTimeout(reminderTimer);
+  document.getElementById("reminderStatus").textContent=tr("Reminder removed.");
+}
+
+// ---------- DOWNLOAD REPORT ----------
+function downloadReport(){
+  if(currentBMI===null){
+    alert(tr("Please calculate BMI first."));
+    return;
+  }
+  const report=[
+    "SMART BMI & WELLNESS REPORT",
+    "---------------------------",
+    "Name: "+(document.getElementById("userName").value||"Not provided"),
+    "Age: "+document.getElementById("age").value,
+    "Gender: "+document.getElementById("gender").value,
+    "Height: "+document.getElementById("height").value+" cm",
+    "Weight: "+document.getElementById("weight").value+" kg",
+    "BMI: "+currentBMI,
+    "Category: "+currentCategory,
+    "Ideal Weight Range: "+document.getElementById("idealWeight").textContent,
+    "Estimated Calories: "+document.getElementById("calories").textContent,
+    "Water Estimate: "+document.getElementById("waterSuggestion").textContent,
+    "",
+    "Note: BMI is a screening tool, not a medical diagnosis."
+  ].join("\n");
+  const blob=new Blob([report],{type:"text/plain"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="BMI_Health_Report.txt";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ---------- INITIAL LOAD ----------
+function initialize(){
+  loadProfile();
+  updateWater();
+  loadActivity();
+  loadGoals();
+  renderPlans();
+  dailyContent();
+  drawChart();
+  showHistory();
+  scheduleReminder();
+  searchFood();
+  applyTranslations();
+}
+initialize();
+// The page is already rendered in English. Re-render dynamic sections only
+// when a previously selected non-English language needs to be restored.
+if(currentLanguage!=="en")setLanguage(currentLanguage);
+</script>
+</body>
+</html>
